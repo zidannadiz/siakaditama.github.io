@@ -34,17 +34,18 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-// Authentication routes
+// Authentication routes with rate limiting
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [LoginController::class, 'login']);
+Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:5,1'); // 5 attempts per minute
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // Xendit Webhook (public, tanpa auth & CSRF)
 Route::post('/payment/xendit/webhook', [\App\Http\Controllers\Payment\XenditWebhookController::class, 'handleCallback'])
     ->name('payment.xendit.webhook');
 
-// Public route untuk scan QR code token (bisa diakses tanpa login)
+// Public route untuk scan QR code token (bisa diakses tanpa login) dengan rate limiting
 Route::get('/qr-scan/{token}', [\App\Http\Controllers\Mahasiswa\QrCodePresensiController::class, 'publicScan'])
+    ->middleware('throttle:10,1') // 10 attempts per minute per IP
     ->name('qr-presensi.public-scan');
 
 // Dashboard routes

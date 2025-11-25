@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'SIAKAD') - Sistem Informasi Akademik</title>
+    <script>
+        // Nonaktifkan scroll restoration browser SEBELUM halaman dimuat
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+    </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
 </head>
@@ -28,8 +34,14 @@
                     <div class="flex items-center space-x-4">
                         @auth
                             @php
-                                $unreadCount = auth()->user()->notifikasis()->where('is_read', false)->count();
-                                $recentNotifikasis = auth()->user()->notifikasis()->where('is_read', false)->orderBy('created_at', 'desc')->limit(5)->get();
+                                // Variabel dari View Composer (AppServiceProvider)
+                                // Fallback jika View Composer tidak dipanggil
+                                if (!isset($unreadCount)) {
+                                    $user = auth()->user();
+                                    $unreadNotifikasis = $user->notifikasis()->where('is_read', false)->get();
+                                    $unreadCount = $unreadNotifikasis->count();
+                                    $recentNotifikasis = $unreadNotifikasis->sortByDesc('created_at')->take(5);
+                                }
                             @endphp
                             
                             <div class="flex items-center space-x-4">
@@ -44,12 +56,12 @@
                                 
                                 <!-- Notifikasi Dropdown -->
                                 <div class="relative" x-data="{ open: false }">
-                                    <button @click="open = !open" class="relative p-2 text-gray-600 hover:text-gray-900 transition-colors">
+                                    <button @click="open = !open" class="relative p-2 text-gray-600 hover:text-gray-900 transition-colors flex items-center" style="cursor: pointer;">
                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                                         </svg>
                                         @if($unreadCount > 0)
-                                            <span class="absolute top-0 right-0 block h-4 w-4 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-bold">{{ $unreadCount > 9 ? '9+' : $unreadCount }}</span>
+                                            <span class="ml-1.5 rounded-full pointer-events-none" style="flex-shrink: 0; width: 10px; height: 10px; background-color: #ff0000 !important; border: 2px solid white; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.3);"></span>
                                         @endif
                                     </button>
                                     
@@ -60,7 +72,7 @@
                                             @if($unreadCount > 0)
                                                 <form action="{{ route('notifikasi.read-all') }}" method="POST" class="inline">
                                                     @csrf
-                                                    <button type="submit" class="text-xs text-blue-600 hover:text-blue-800">Tandai semua dibaca</button>
+                                                    <button type="submit" class="text-xs text-blue-600 hover:text-blue-800" style="cursor: pointer;">Tandai semua dibaca</button>
                                                 </form>
                                             @endif
                                         </div>
@@ -111,7 +123,7 @@
                                     </div>
                                 </div>
                                 
-                                <form method="POST" action="{{ route('logout') }}">
+                                <form method="POST" action="{{ route('logout') }}" class="ml-2">
                                     @csrf
                                     <button type="submit" class="text-sm text-gray-600 hover:text-gray-900" style="cursor: pointer;">
                                         Keluar
@@ -166,6 +178,154 @@
     </div>
     @stack('scripts')
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    
+    <script>
+        // Nonaktifkan scroll restoration default browser
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+        
+        // Mencegah scroll kembali ke atas saat navigasi
+        (function() {
+            // Simpan posisi scroll sidebar sebelum navigasi
+            // Cari elemen yang bisa di-scroll (parent div dengan overflow-y-auto)
+            const sidebarContainer = document.querySelector('div.flex-shrink-0.overflow-y-auto');
+            if (sidebarContainer) {
+                // Simpan posisi scroll sidebar saat scroll (menggunakan localStorage)
+                let sidebarScrollTimeout;
+                sidebarContainer.addEventListener('scroll', function() {
+                    clearTimeout(sidebarScrollTimeout);
+                    sidebarScrollTimeout = setTimeout(function() {
+                        const scrollPos = sidebarContainer.scrollTop;
+                        // Selalu simpan posisi scroll
+                        localStorage.setItem('sidebarScrollPos', scrollPos.toString());
+                        sessionStorage.setItem('sidebarScrollPos', scrollPos.toString());
+                    }, 50);
+                }, { passive: true });
+                
+                // Simpan posisi scroll secara berkala (backup method) - simpan SEMUA posisi
+                setInterval(function() {
+                    const scrollPos = sidebarContainer.scrollTop;
+                    // Simpan semua posisi, termasuk 0 (jika user scroll kembali ke atas)
+                    localStorage.setItem('sidebarScrollPos', scrollPos.toString());
+                }, 500); // Simpan setiap 500ms
+                
+                // Simpan posisi scroll sidebar saat klik link di sidebar
+                // Gunakan capture phase untuk menangkap klik SEBELUM default behavior
+                document.addEventListener('click', function(e) {
+                    const link = e.target.closest('a[href]');
+                    if (link && sidebarContainer && sidebarContainer.contains(link)) {
+                        if (link.href && !link.href.includes('#') && !link.href.includes('javascript:')) {
+                            // Simpan posisi scroll sidebar saat ini (langsung, tidak pakai timeout)
+                            const scrollPos = sidebarContainer.scrollTop;
+                            localStorage.setItem('sidebarScrollPos', scrollPos.toString());
+                            sessionStorage.setItem('sidebarScrollPos', scrollPos.toString());
+                            // Jangan prevent default, biarkan navigasi normal terjadi
+                        }
+                    }
+                }, true);
+                
+                // Flag untuk mencegah restore berulang
+                let isRestored = false;
+                
+                // Pulihkan posisi scroll sidebar setelah halaman dimuat (hanya sekali)
+                function restoreSidebarScroll() {
+                    if (isRestored) return; // Jangan restore lagi jika sudah berhasil
+                    
+                    const savedSidebarScroll = localStorage.getItem('sidebarScrollPos');
+                    if (savedSidebarScroll !== null && savedSidebarScroll !== '') {
+                        const scrollPos = parseInt(savedSidebarScroll, 10);
+                        if (!isNaN(scrollPos) && sidebarContainer.scrollTop !== scrollPos) {
+                            sidebarContainer.scrollTop = scrollPos;
+                            isRestored = true; // Tandai sudah restore
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+                
+                // Restore hanya sekali setelah halaman siap
+                function attemptRestore() {
+                    if (restoreSidebarScroll()) {
+                        return; // Berhasil restore, stop
+                    }
+                    // Coba lagi setelah delay jika belum berhasil
+                    if (!isRestored) {
+                        setTimeout(attemptRestore, 100);
+                    }
+                }
+                
+                // Mulai restore setelah DOM ready
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', function() {
+                        setTimeout(attemptRestore, 50);
+                    });
+                } else {
+                    setTimeout(attemptRestore, 50);
+                }
+                
+                // Simpan posisi scroll sebelum unload/pagehide
+                window.addEventListener('beforeunload', function() {
+                    const scrollPos = sidebarContainer.scrollTop;
+                    localStorage.setItem('sidebarScrollPos', scrollPos.toString());
+                });
+                
+                window.addEventListener('pagehide', function() {
+                    const scrollPos = sidebarContainer.scrollTop;
+                    localStorage.setItem('sidebarScrollPos', scrollPos.toString());
+                });
+            }
+            
+            // Cegah window scroll ke atas
+            let preventScroll = false;
+            window.addEventListener('beforeunload', function() {
+                preventScroll = true;
+            });
+            
+            window.addEventListener('scroll', function() {
+                if (preventScroll && window.scrollY === 0) {
+                    // Jika scroll kembali ke 0, kembalikan ke posisi sebelumnya
+                    const savedMainScroll = sessionStorage.getItem('mainContentScroll');
+                    if (savedMainScroll && parseInt(savedMainScroll, 10) > 0) {
+                        window.scrollTo(0, parseInt(savedMainScroll, 10));
+                    }
+                }
+            }, { passive: false });
+            
+            // Simpan posisi scroll main content
+            const mainContent = document.querySelector('main.flex-1.overflow-y-auto');
+            if (mainContent) {
+                let mainScrollTimeout;
+                mainContent.addEventListener('scroll', function() {
+                    clearTimeout(mainScrollTimeout);
+                    mainScrollTimeout = setTimeout(function() {
+                        sessionStorage.setItem('mainContentScroll', mainContent.scrollTop.toString());
+                    }, 50);
+                });
+                
+                // Simpan sebelum unload
+                window.addEventListener('beforeunload', function() {
+                    sessionStorage.setItem('mainContentScroll', mainContent.scrollTop.toString());
+                });
+                
+                // Pulihkan posisi scroll main content
+                function restoreMainContentScroll() {
+                    const savedMainScroll = sessionStorage.getItem('mainContentScroll');
+                    if (savedMainScroll !== null && parseInt(savedMainScroll, 10) > 0) {
+                        setTimeout(function() {
+                            mainContent.scrollTop = parseInt(savedMainScroll, 10);
+                        }, 100);
+                    }
+                }
+                
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', restoreMainContentScroll);
+                } else {
+                    restoreMainContentScroll();
+                }
+            }
+        })();
+    </script>
     
     <!-- Confirmation Modal -->
     <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="display: none; z-index: 99999; position: fixed;">

@@ -34,12 +34,12 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Public routes
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/register', [AuthController::class, 'register']); // Optional
+// Public routes with rate limiting
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1'); // 5 attempts per minute
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:3,1'); // 3 attempts per minute
 
-// Protected routes
-Route::middleware('auth:sanctum')->group(function () {
+// Protected routes with rate limiting
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // 60 requests per minute
     // Authentication
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);

@@ -7,6 +7,7 @@ use App\Models\KRS;
 use App\Models\JadwalKuliah;
 use App\Models\Mahasiswa;
 use App\Models\Semester;
+use App\Services\NotifikasiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -172,7 +173,7 @@ class KRSController extends Controller
             ], 422);
         }
 
-        $jadwal = JadwalKuliah::findOrFail($validated['jadwal_kuliah_id']);
+        $jadwal = JadwalKuliah::with('mataKuliah')->findOrFail($validated['jadwal_kuliah_id']);
         if ($jadwal->terisi >= $jadwal->kuota) {
             return response()->json([
                 'success' => false,
@@ -188,6 +189,24 @@ class KRSController extends Controller
         ]);
 
         $jadwal->increment('terisi');
+
+        // Kirim notifikasi ke admin
+        try {
+            $mataKuliah = $jadwal->mataKuliah;
+            $adminUsers = \App\Models\User::where('role', 'admin')->get();
+            
+            if ($adminUsers->count() > 0) {
+                NotifikasiService::createForRole(
+                    'admin',
+                    'Pengajuan KRS Baru',
+                    "Mahasiswa {$mahasiswa->nama} ({$mahasiswa->nim}) mengajukan KRS untuk mata kuliah {$mataKuliah->nama_mk}.",
+                    'info',
+                    route('admin.krs.index')
+                );
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error creating notification for KRS: ' . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,

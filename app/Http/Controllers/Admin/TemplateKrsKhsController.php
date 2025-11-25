@@ -52,9 +52,13 @@ class TemplateKrsKhsController extends Controller
             'is_active' => 'boolean',
         ]);
 
-        // Store template file
+        // Store template file with sanitized name
         $file = $request->file('template_file');
-        $filePath = $file->store('templates/krs-khs', 'local');
+        // Generate unique filename to prevent path traversal and naming conflicts
+        $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+        // Sanitize filename - remove any dangerous characters
+        $filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', $filename);
+        $filePath = $file->storeAs('templates/krs-khs', $filename, 'local');
         
         $validated['file_path'] = $filePath;
         $validated['is_active'] = $request->has('is_active') ? true : false;
@@ -101,9 +105,13 @@ class TemplateKrsKhsController extends Controller
                 Storage::disk('local')->delete($templateKrsKh->file_path);
             }
 
-            // Store new file
+            // Store new file with sanitized name
             $file = $request->file('template_file');
-            $filePath = $file->store('templates/krs-khs', 'local');
+            // Generate unique filename to prevent path traversal and naming conflicts
+            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            // Sanitize filename - remove any dangerous characters
+            $filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', $filename);
+            $filePath = $file->storeAs('templates/krs-khs', $filename, 'local');
             $validated['file_path'] = $filePath;
         } else {
             unset($validated['template_file']);

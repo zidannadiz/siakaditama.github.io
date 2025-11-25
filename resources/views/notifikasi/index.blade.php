@@ -146,7 +146,7 @@
                             <h3 class="text-lg font-semibold text-gray-900">{{ $notifikasi->judul }}</h3>
                             <div class="flex items-center space-x-2">
                                 @if(!$notifikasi->is_read)
-                                    <span class="px-2 py-1 text-xs font-medium bg-blue-500 text-white rounded-full">Baru</span>
+                                    <span class="px-2 py-1 text-xs font-medium bg-blue-500 text-black rounded-full">Baru</span>
                                 @endif
                                 <span class="text-xs text-gray-400">{{ $notifikasi->created_at->diffForHumans() }}</span>
                             </div>

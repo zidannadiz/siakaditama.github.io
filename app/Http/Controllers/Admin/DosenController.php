@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Dosen;
 use App\Models\User;
 use App\Rules\ValidEmail;
+use App\Rules\StrongPassword;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -28,7 +29,7 @@ class DosenController extends Controller
             'nidn' => 'required|string|max:20|unique:dosens,nidn',
             'nama' => 'required|string|max:255',
             'email' => ['required', new ValidEmail(), 'unique:users,email'],
-            'password' => 'required|string|min:8',
+            'password' => ['required', 'string', new StrongPassword()],
             'jenis_kelamin' => 'required|in:L,P',
             'tempat_lahir' => 'nullable|string',
             'tanggal_lahir' => 'nullable|date',
@@ -73,7 +74,7 @@ class DosenController extends Controller
             'nidn' => 'required|string|max:20|unique:dosens,nidn,' . $dosen->id,
             'nama' => 'required|string|max:255',
             'email' => ['required', new ValidEmail(), 'unique:users,email,' . $dosen->user_id],
-            'password' => 'nullable|string|min:8',
+            'password' => ['nullable', 'string', new StrongPassword()],
             'jenis_kelamin' => 'required|in:L,P',
             'tempat_lahir' => 'nullable|string',
             'tanggal_lahir' => 'nullable|date',

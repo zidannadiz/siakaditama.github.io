@@ -7,6 +7,8 @@ use App\Models\KRS;
 use App\Models\JadwalKuliah;
 use App\Models\Mahasiswa;
 use App\Models\Semester;
+use App\Models\User;
+use App\Services\NotifikasiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -109,12 +111,12 @@ class KRSController extends Controller
         }
 
         // Cek kuota
-        $jadwal = JadwalKuliah::findOrFail($validated['jadwal_kuliah_id']);
+        $jadwal = JadwalKuliah::with('mataKuliah')->findOrFail($validated['jadwal_kuliah_id']);
         if ($jadwal->terisi >= $jadwal->kuota) {
             return back()->with('error', 'Kuota kelas sudah penuh.');
         }
 
-        KRS::create([
+        $krs = KRS::create([
             'mahasiswa_id' => $mahasiswa->id,
             'jadwal_kuliah_id' => $validated['jadwal_kuliah_id'],
             'semester_id' => $semester_aktif->id,
@@ -123,6 +125,27 @@ class KRSController extends Controller
 
         // Update terisi
         $jadwal->increment('terisi');
+
+        // Kirim notifikasi ke admin
+        try {
+            $mataKuliah = $jadwal->mataKuliah;
+            $adminUsers = User::where('role', 'admin')->get();
+            
+            if ($adminUsers->count() > 0) {
+                $result = NotifikasiService::createForRole(
+                    'admin',
+                    'Pengajuan KRS Baru',
+                    "Mahasiswa {$mahasiswa->nama} ({$mahasiswa->nim}) mengajukan KRS untuk mata kuliah {$mataKuliah->nama_mk}.",
+                    'info',
+                    route('admin.krs.index')
+                );
+                \Log::info('KRS Notification created', ['result' => $result, 'admin_count' => $adminUsers->count()]);
+            } else {
+                \Log::warning('No admin users found to send KRS notification');
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error creating notification for KRS: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+        }
 
         return redirect()->route('mahasiswa.krs.index')
             ->with('success', 'KRS berhasil ditambahkan. Menunggu persetujuan.');

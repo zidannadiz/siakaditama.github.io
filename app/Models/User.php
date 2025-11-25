@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -22,7 +23,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role',
+        // Note: 'role' is NOT fillable to prevent mass assignment vulnerability
+        // Role must be assigned explicitly in controllers
     ];
 
     /**
@@ -109,7 +111,7 @@ class User extends Authenticatable
             
             return $totalUnread;
         } catch (\Exception $e) {
-            \Log::error('Error counting unread messages: ' . $e->getMessage(), [
+            Log::error('Error counting unread messages: ' . $e->getMessage(), [
                 'user_id' => $this->id,
                 'error' => $e->getMessage()
             ]);

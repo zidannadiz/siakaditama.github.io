@@ -27,6 +27,10 @@ class NotifikasiService
      */
     public static function createForUsers($user_ids, $judul, $pesan, $tipe = 'info', $link = null)
     {
+        if (empty($user_ids)) {
+            return false;
+        }
+        
         $notifikasis = [];
         foreach ($user_ids as $user_id) {
             $notifikasis[] = [

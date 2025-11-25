@@ -85,11 +85,26 @@
                 <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Akademik</p>
             </div>
             
-            <a href="{{ route('admin.krs.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.krs') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-                <span>KRS</span>
+            <a href="{{ route('admin.krs.index') }}" class="flex items-center justify-between px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.krs') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+                <div class="flex items-center space-x-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span>KRS</span>
+                </div>
+                @if(auth()->user()->role === 'admin')
+                    @php
+                        // Variabel dari View Composer (AppServiceProvider)
+                        // Fallback jika View Composer tidak dipanggil
+                        if (!isset($pendingKrsCount)) {
+                            $pendingKrs = \App\Models\KRS::where('status', 'pending')->get();
+                            $pendingKrsCount = $pendingKrs->count();
+                        }
+                    @endphp
+                    @if($pendingKrsCount > 0)
+                        <span class="rounded-full flex-shrink-0" style="width: 10px; height: 10px; background-color: #ff0000 !important; border: 2px solid white; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.3);"></span>
+                    @endif
+                @endif
             </a>
             
             <a href="{{ route('admin.pengumuman.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.pengumuman') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
@@ -307,12 +322,15 @@
                     <span>Notifikasi</span>
                 </div>
                 @php
-                    $unreadNotifCount = auth()->user()->notifikasis()->where('is_read', false)->count();
+                    // Variabel dari View Composer (AppServiceProvider)
+                    // Fallback jika View Composer tidak dipanggil
+                    if (!isset($unreadNotifCount)) {
+                        $unreadNotifikasis = auth()->user()->notifikasis()->where('is_read', false)->get();
+                        $unreadNotifCount = $unreadNotifikasis->count();
+                    }
                 @endphp
                 @if($unreadNotifCount > 0)
-                    <span class="bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0">
-                        {{ $unreadNotifCount > 9 ? '9+' : $unreadNotifCount }}
-                    </span>
+                    <span class="rounded-full flex-shrink-0" style="width: 10px; height: 10px; background-color: #ff0000 !important; border: 2px solid white; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.3);"></span>
                 @endif
             </a>
             
@@ -324,28 +342,51 @@
                     <span>Pesan</span>
                 </div>
                 @php
-                    // Force recalculate
-                    $actualCount = auth()->user()->getUnreadMessagesCount();
+                    $unreadMessagesCount = auth()->user()->getUnreadMessagesCount();
                 @endphp
-                @if($actualCount > 0)
-                    <span class="bg-gray-900 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0" style="background-color: #111827 !important; display: flex !important; width: 24px !important; height: 24px !important;" title="{{ $actualCount }} pesan belum dibaca">
-                        {{ $actualCount > 9 ? '9+' : $actualCount }}
-                    </span>
+                @if($unreadMessagesCount > 0)
+                    <span class="rounded-full flex-shrink-0" style="width: 10px; height: 10px; background-color: #ff0000 !important; border: 2px solid white; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.3);"></span>
                 @endif
             </a>
             
-            <a href="{{ route('forum.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'forum') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path>
-                </svg>
-                <span>Forum</span>
+            <a href="{{ route('forum.index') }}" class="flex items-center justify-between px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'forum') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+                <div class="flex items-center space-x-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path>
+                    </svg>
+                    <span>Forum</span>
+                </div>
+                @php
+                    // Hitung forum posts baru (24 jam terakhir)
+                    $unreadForumCount = \App\Models\ForumPost::where('created_at', '>=', now()->subDay())
+                        ->where('user_id', '!=', auth()->id())
+                        ->count();
+                @endphp
+                @if($unreadForumCount > 0)
+                    <span class="rounded-full flex-shrink-0" style="width: 10px; height: 10px; background-color: #ff0000 !important; border: 2px solid white; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.3);"></span>
+                @endif
             </a>
             
-            <a href="{{ route('qna.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'qna') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <span>Tanya Jawab</span>
+            <a href="{{ route('qna.index') }}" class="flex items-center justify-between px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'qna') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+                <div class="flex items-center space-x-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>Tanya Jawab</span>
+                </div>
+                @php
+                    // Hitung questions atau answers baru (24 jam terakhir)
+                    $newQuestions = \App\Models\Question::where('created_at', '>=', now()->subDay())
+                        ->where('user_id', '!=', auth()->id())
+                        ->count();
+                    $newAnswers = \App\Models\Answer::where('created_at', '>=', now()->subDay())
+                        ->where('user_id', '!=', auth()->id())
+                        ->count();
+                    $unreadQnaCount = $newQuestions + $newAnswers;
+                @endphp
+                @if($unreadQnaCount > 0)
+                    <span class="rounded-full flex-shrink-0" style="width: 10px; height: 10px; background-color: #ff0000 !important; border: 2px solid white; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.3);"></span>
+                @endif
             </a>
         </div>
 
