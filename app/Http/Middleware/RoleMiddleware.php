@@ -16,7 +16,21 @@ class RoleMiddleware
      */
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
+        // Ensure session is started
+        if ($request->hasSession() && !$request->session()->isStarted()) {
+            $request->session()->start();
+        }
+
+        // Check if user is authenticated
         if (!auth()->check()) {
+            // Log for debugging
+            \Log::info('RoleMiddleware: User not authenticated', [
+                'url' => $request->url(),
+                'session_id' => $request->session()->getId(),
+                'has_session' => $request->hasSession(),
+                'session_started' => $request->hasSession() ? $request->session()->isStarted() : false,
+            ]);
+            
             return redirect()->route('login');
         }
 

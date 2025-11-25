@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Template KRS Contoh</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            font-size: 12pt;
+            margin: 2cm;
+        }
+        h1 {
+            text-align: center;
+            font-size: 16pt;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .info {
+            margin-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            text-align: center;
+        }
+        td {
+            text-align: center;
+        }
+        .no { width: 5%; }
+        .kode { width: 15%; }
+        .nama { width: 40%; }
+        .sks { width: 10%; }
+        .semester { width: 15%; }
+    </style>
+</head>
+<body>
+    <h1>KARTU RENCANA STUDI (KRS)</h1>
+    
+    <div class="info">
+        <p><strong>NIM</strong>            : {NIM}</p>
+        <p><strong>Nama</strong>           : {NAMA}</p>
+        <p><strong>Program Studi</strong>  : {PROGRAM_STUDI}</p>
+        <p><strong>Tahun Akademik</strong> : {TAHUN_AKADEMIK}</p>
+        <p><strong>Tanggal Cetak</strong>  : {TANGGAL_CETAK}</p>
+    </div>
+
+    <h2>MATA KULIAH YANG DIPILIH:</h2>
+    
+    <table>
+        <thead>
+            <tr>
+                <th class="no">No</th>
+                <th class="kode">Kode MK</th>
+                <th class="nama">Nama Mata Kuliah</th>
+                <th class="sks">SKS</th>
+                <th class="semester">Semester</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{NO}</td>
+                <td>{KODE_MK}</td>
+                <td style="text-align: left;">{NAMA_MK}</td>
+                <td>{SKS}</td>
+                <td>{SEMESTER}</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <p style="margin-top: 30px; font-size: 10pt; color: #666;">
+        <strong>Catatan:</strong> Baris tabel dengan placeholder {NO}, {KODE_MK}, {NAMA_MK}, {SKS}, {SEMESTER} 
+        akan otomatis di-clone sesuai jumlah mata kuliah saat generate.
+    </p>
+</body>
+</html>
+

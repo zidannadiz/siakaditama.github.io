@@ -26,7 +26,9 @@
             <div>
                 <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
                 <input type="email" name="email" id="email" value="{{ old('email', $admin->email) }}" required
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('email') border-red-500 @enderror">
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('email') border-red-500 @enderror"
+                    placeholder="contoh@email.com">
+                <p class="mt-1 text-xs text-gray-500">Email harus valid dan memiliki domain yang dapat diverifikasi (MX record)</p>
                 @error('email')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror

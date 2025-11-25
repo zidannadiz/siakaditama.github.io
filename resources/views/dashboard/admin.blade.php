@@ -85,6 +85,36 @@
         <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <div class="flex items-center justify-between">
                 <div>
+                    <p class="text-sm font-medium text-gray-600">Pembayaran Pending</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ $stats['payment_pending'] }}</p>
+                    <a href="{{ route('admin.payment.index', ['status' => 'pending']) }}" class="text-xs text-blue-600 hover:underline mt-1">Lihat semua</a>
+                </div>
+                <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Pembayaran</p>
+                    <p class="text-lg font-bold text-gray-900 mt-2">Rp {{ number_format($stats['payment_total_amount'], 0, ',', '.') }}</p>
+                    <p class="text-xs text-gray-500 mt-1">{{ $stats['payment_paid'] }} transaksi</p>
+                </div>
+                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div class="flex items-center justify-between">
+                <div>
                     <p class="text-sm font-medium text-gray-600">KRS Disetujui</p>
                     <p class="text-3xl font-bold text-gray-900 mt-2">{{ $stats['krs_approved'] }}</p>
                 </div>
@@ -112,92 +142,87 @@
     </div>
 
     <!-- Charts Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <!-- Grafik Mahasiswa per Prodi -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">Mahasiswa per Program Studi</h2>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <h2 class="text-base font-semibold text-gray-900 mb-2">Mahasiswa per Program Studi</h2>
             @if($mahasiswa_per_prodi && $mahasiswa_per_prodi->count() > 0)
-                <canvas id="chartMahasiswaProdi" height="300"></canvas>
+                <canvas id="chartMahasiswaProdi" height="120"></canvas>
             @else
-                <div class="flex items-center justify-center h-[300px] text-gray-500">
+                <div class="flex items-center justify-center h-[120px] text-gray-500">
                     <div class="text-center">
-                        <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="mx-auto h-8 w-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                         </svg>
-                        <p class="font-medium text-gray-700">Belum ada data mahasiswa</p>
-                        <p class="text-sm mt-1 text-gray-500">Grafik akan muncul setelah ada mahasiswa terdaftar</p>
+                        <p class="text-sm font-medium text-gray-700">Belum ada data</p>
                     </div>
                 </div>
             @endif
         </div>
 
         <!-- Grafik KRS per Semester -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">KRS per Semester</h2>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <h2 class="text-base font-semibold text-gray-900 mb-2">KRS per Semester</h2>
             @if($krs_per_semester && $krs_per_semester->count() > 0)
-                <canvas id="chartKRSSemester" height="300"></canvas>
+                <canvas id="chartKRSSemester" height="120"></canvas>
             @else
-                <div class="flex items-center justify-center h-[300px] text-gray-500">
+                <div class="flex items-center justify-center h-[120px] text-gray-500">
                     <div class="text-center">
-                        <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="mx-auto h-8 w-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                         </svg>
-                        <p class="font-medium text-gray-700">Belum ada data KRS</p>
-                        <p class="text-sm mt-1 text-gray-500">Grafik akan muncul setelah mahasiswa mengambil KRS</p>
+                        <p class="text-sm font-medium text-gray-700">Belum ada data</p>
                     </div>
                 </div>
             @endif
         </div>
 
         <!-- Grafik Distribusi Nilai -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">Distribusi Nilai (Huruf Mutu)</h2>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <h2 class="text-base font-semibold text-gray-900 mb-2">Distribusi Nilai (Huruf Mutu)</h2>
             @if($distribusi_nilai && $distribusi_nilai->count() > 0)
-                <canvas id="chartDistribusiNilai" height="300"></canvas>
+                <canvas id="chartDistribusiNilai" height="120"></canvas>
             @else
-                <div class="flex items-center justify-center h-[300px] text-gray-500">
+                <div class="flex items-center justify-center h-[120px] text-gray-500">
                     <div class="text-center">
-                        <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="mx-auto h-8 w-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                         </svg>
-                        <p class="font-medium text-gray-700">Belum ada data nilai</p>
-                        <p class="text-sm mt-1 text-gray-500">Grafik akan muncul setelah dosen menginput nilai</p>
+                        <p class="text-sm font-medium text-gray-700">Belum ada data</p>
                     </div>
                 </div>
             @endif
         </div>
 
         <!-- Grafik Status Presensi -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">Status Presensi</h2>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <h2 class="text-base font-semibold text-gray-900 mb-2">Status Presensi</h2>
             @if($status_presensi && $status_presensi->count() > 0)
-                <canvas id="chartStatusPresensi" height="300"></canvas>
+                <canvas id="chartStatusPresensi" height="120"></canvas>
             @else
-                <div class="flex items-center justify-center h-[300px] text-gray-500">
+                <div class="flex items-center justify-center h-[120px] text-gray-500">
                     <div class="text-center">
-                        <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="mx-auto h-8 w-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                         </svg>
-                        <p class="font-medium text-gray-700">Belum ada data presensi</p>
-                        <p class="text-sm mt-1 text-gray-500">Grafik akan muncul setelah dosen menginput presensi</p>
+                        <p class="text-sm font-medium text-gray-700">Belum ada data</p>
                     </div>
                 </div>
             @endif
         </div>
 
         <!-- Grafik KRS per Status -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:col-span-2">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">KRS per Status</h2>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 lg:col-span-2">
+            <h2 class="text-base font-semibold text-gray-900 mb-2">KRS per Status</h2>
             @if($krs_per_status && $krs_per_status->count() > 0)
                 <canvas id="chartKRSStatus" height="100"></canvas>
             @else
-                <div class="flex items-center justify-center h-[200px] text-gray-500">
+                <div class="flex items-center justify-center h-[100px] text-gray-500">
                     <div class="text-center">
-                        <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="mx-auto h-8 w-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
-                        <p class="font-medium text-gray-700">Belum ada data KRS</p>
-                        <p class="text-sm mt-1 text-gray-500">Grafik akan muncul setelah mahasiswa mengambil KRS</p>
+                        <p class="text-sm font-medium text-gray-700">Belum ada data</p>
                     </div>
                 </div>
             @endif
@@ -240,6 +265,9 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Prevent auto scroll
+        window.scrollTo(0, 0);
+        
         // Chart Colors
         const colors = {
             primary: ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#06B6D4', '#F97316', '#EC4899'],
@@ -247,23 +275,34 @@
         };
 
         // Grafik Mahasiswa per Prodi
+        @php
+            $mahasiswaData = $mahasiswa_per_prodi->toArray();
+        @endphp
+        @if($mahasiswa_per_prodi && $mahasiswa_per_prodi->count() > 0)
         const ctxMahasiswaProdi = document.getElementById('chartMahasiswaProdi');
-        if (ctxMahasiswaProdi && @json($mahasiswa_per_prodi && $mahasiswa_per_prodi->count() > 0)) {
+        if (ctxMahasiswaProdi) {
             new Chart(ctxMahasiswaProdi.getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: @json($mahasiswa_per_prodi->pluck('label')),
-            datasets: [{
-                label: 'Jumlah Mahasiswa',
-                data: @json($mahasiswa_per_prodi->pluck('value')),
-                backgroundColor: colors.primary[0],
-                borderColor: colors.primary[0],
-                borderWidth: 1
-            }]
-        },
+                type: 'bar',
+                data: {
+                    labels: @json($mahasiswa_per_prodi->pluck('label')),
+                    datasets: [{
+                        label: 'Jumlah Mahasiswa',
+                        data: @json($mahasiswa_per_prodi->pluck('value')),
+                        backgroundColor: colors.primary[0],
+                        borderColor: colors.primary[0],
+                        borderWidth: 1
+                    }]
+                },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
+            aspectRatio: 3.5,
+            layout: {
+                padding: {
+                    top: 5,
+                    bottom: 5
+                }
+            },
             plugins: {
                 legend: {
                     display: false
@@ -273,34 +312,57 @@
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        stepSize: 1
+                        stepSize: 1,
+                        font: {
+                            size: 10
+                        }
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: 10
+                        }
                     }
                 }
-            }
+            },
+            animation: {
+                duration: 0
+            },
+            onResize: null
         }
             });
         }
+        @endif
 
         // Grafik KRS per Semester
+        @if($krs_per_semester && $krs_per_semester->count() > 0)
         const ctxKRSSemester = document.getElementById('chartKRSSemester');
-        if (ctxKRSSemester && @json($krs_per_semester && $krs_per_semester->count() > 0)) {
+        if (ctxKRSSemester) {
             new Chart(ctxKRSSemester.getContext('2d'), {
                 type: 'line',
-        data: {
-            labels: @json($krs_per_semester->pluck('label')),
-            datasets: [{
-                label: 'Jumlah KRS',
-                data: @json($krs_per_semester->pluck('value')),
-                borderColor: colors.primary[1],
-                backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.4
-            }]
-        },
+                data: {
+                    labels: @json($krs_per_semester->pluck('label')),
+                    datasets: [{
+                        label: 'Jumlah KRS',
+                        data: @json($krs_per_semester->pluck('value')),
+                        borderColor: colors.primary[1],
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
+            aspectRatio: 3.5,
+            layout: {
+                padding: {
+                    top: 5,
+                    bottom: 5
+                }
+            },
             plugins: {
                 legend: {
                     display: false
@@ -310,97 +372,160 @@
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        stepSize: 1
+                        stepSize: 1,
+                        font: {
+                            size: 10
+                        }
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: 10
+                        }
                     }
                 }
-            }
+            },
+            animation: {
+                duration: 0
+            },
+            onResize: null
         }
             });
         }
+        @endif
 
         // Grafik Distribusi Nilai
+        @if($distribusi_nilai && $distribusi_nilai->count() > 0)
         const ctxDistribusiNilai = document.getElementById('chartDistribusiNilai');
-        if (ctxDistribusiNilai && @json($distribusi_nilai && $distribusi_nilai->count() > 0)) {
+        if (ctxDistribusiNilai) {
             new Chart(ctxDistribusiNilai.getContext('2d'), {
                 type: 'pie',
-        data: {
-            labels: @json($distribusi_nilai->pluck('label')),
-            datasets: [{
-                data: @json($distribusi_nilai->pluck('value')),
-                backgroundColor: colors.primary,
-                borderWidth: 2,
-                borderColor: '#fff'
-            }]
-        },
+                data: {
+                    labels: @json($distribusi_nilai->pluck('label')),
+                    datasets: [{
+                        data: @json($distribusi_nilai->pluck('value')),
+                        backgroundColor: colors.primary,
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
+            aspectRatio: 2.2,
+            layout: {
+                padding: {
+                    top: 5,
+                    bottom: 5
+                }
+            },
             plugins: {
                 legend: {
-                    position: 'right'
+                    position: 'right',
+                    labels: {
+                        boxWidth: 10,
+                        font: {
+                            size: 9
+                        },
+                        padding: 8
+                    }
                 }
-            }
+            },
+            animation: {
+                duration: 0
+            },
+            onResize: null
         }
             });
         }
+        @endif
 
         // Grafik Status Presensi
+        @if($status_presensi && $status_presensi->count() > 0)
         const ctxStatusPresensi = document.getElementById('chartStatusPresensi');
-        if (ctxStatusPresensi && @json($status_presensi && $status_presensi->count() > 0)) {
+        if (ctxStatusPresensi) {
             new Chart(ctxStatusPresensi.getContext('2d'), {
                 type: 'doughnut',
-        data: {
-            labels: @json($status_presensi->pluck('label')),
-            datasets: [{
-                data: @json($status_presensi->pluck('value')),
-                backgroundColor: [
-                    colors.primary[2], // Hadir - Green
-                    colors.primary[3], // Izin - Yellow
-                    colors.primary[4], // Sakit - Orange
-                    colors.primary[5], // Alpa - Red
-                ],
-                borderWidth: 2,
-                borderColor: '#fff'
-            }]
-        },
+                data: {
+                    labels: @json($status_presensi->pluck('label')),
+                    datasets: [{
+                        data: @json($status_presensi->pluck('value')),
+                        backgroundColor: [
+                            colors.primary[2], // Hadir - Green
+                            colors.primary[3], // Izin - Yellow
+                            colors.primary[4], // Sakit - Orange
+                            colors.primary[5], // Alpa - Red
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
+            aspectRatio: 2.2,
+            layout: {
+                padding: {
+                    top: 5,
+                    bottom: 5
+                }
+            },
             plugins: {
                 legend: {
-                    position: 'right'
+                    position: 'right',
+                    labels: {
+                        boxWidth: 10,
+                        font: {
+                            size: 9
+                        },
+                        padding: 8
+                    }
                 }
-            }
+            },
+            animation: {
+                duration: 0
+            },
+            onResize: null
         }
             });
         }
+        @endif
 
         // Grafik KRS per Status
+        @if($krs_per_status && $krs_per_status->count() > 0)
         const ctxKRSStatus = document.getElementById('chartKRSStatus');
-        if (ctxKRSStatus && @json($krs_per_status && $krs_per_status->count() > 0)) {
+        if (ctxKRSStatus) {
             new Chart(ctxKRSStatus.getContext('2d'), {
                 type: 'bar',
-        data: {
-            labels: @json($krs_per_status->pluck('label')),
-            datasets: [{
-                label: 'Jumlah KRS',
-                data: @json($krs_per_status->pluck('value')),
-                backgroundColor: [
-                    colors.primary[3], // Pending - Yellow
-                    colors.primary[2], // Disetujui - Green
-                    colors.primary[5], // Ditolak - Red
-                ],
-                borderColor: [
-                    colors.primary[3],
-                    colors.primary[2],
-                    colors.primary[5],
-                ],
-                borderWidth: 1
-            }]
-        },
+                data: {
+                    labels: @json($krs_per_status->pluck('label')),
+                    datasets: [{
+                        label: 'Jumlah KRS',
+                        data: @json($krs_per_status->pluck('value')),
+                        backgroundColor: [
+                            colors.primary[3], // Pending - Yellow
+                            colors.primary[2], // Disetujui - Green
+                            colors.primary[5], // Ditolak - Red
+                        ],
+                        borderColor: [
+                            colors.primary[3],
+                            colors.primary[2],
+                            colors.primary[5],
+                        ],
+                        borderWidth: 1
+                    }]
+                },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
+            aspectRatio: 5,
+            layout: {
+                padding: {
+                    top: 5,
+                    bottom: 5
+                }
+            },
             plugins: {
                 legend: {
                     display: false
@@ -410,12 +535,28 @@
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        stepSize: 1
+                        stepSize: 1,
+                        font: {
+                            size: 10
+                        }
                     }
-            }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: 10
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: 0
+            },
+            onResize: null
         }
             });
         }
+        @endif
     });
 </script>
 @endpush

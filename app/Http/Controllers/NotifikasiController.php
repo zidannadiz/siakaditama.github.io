@@ -8,12 +8,28 @@ use Illuminate\Support\Facades\Auth;
 
 class NotifikasiController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $notifikasis = Auth::user()->notifikasis()
-            ->orderBy('is_read', 'asc')
+        $query = Auth::user()->notifikasis();
+        
+        // Filter berdasarkan status baca
+        if ($request->has('filter')) {
+            if ($request->filter === 'unread') {
+                $query->where('is_read', false);
+            } elseif ($request->filter === 'read') {
+                $query->where('is_read', true);
+            }
+        }
+        
+        // Filter berdasarkan tipe
+        if ($request->has('tipe')) {
+            $query->where('tipe', $request->tipe);
+        }
+        
+        $notifikasis = $query->orderBy('is_read', 'asc')
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString();
 
         return view('notifikasi.index', compact('notifikasis'));
     }

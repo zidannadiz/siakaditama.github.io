@@ -14,12 +14,12 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
                 <div class="flex items-start justify-between">
                     <div class="flex-1">
-                        <h3 class="text-lg font-semibold text-gray-900">{{ $jadwal->mataKuliah->nama_mk }}</h3>
-                        <p class="text-sm text-gray-600 mt-1">{{ $jadwal->mataKuliah->kode_mk }} • {{ $jadwal->mataKuliah->sks }} SKS</p>
+                        <h3 class="text-lg font-semibold text-gray-900">{{ $jadwal->mataKuliah->nama_mk ?? 'N/A' }}</h3>
+                        <p class="text-sm text-gray-600 mt-1">{{ $jadwal->mataKuliah->kode_mk ?? 'N/A' }} • {{ $jadwal->mataKuliah->sks ?? 0 }} SKS</p>
                         <p class="text-sm text-gray-500 mt-2">
                             {{ $jadwal->hari }}, {{ date('H:i', strtotime($jadwal->jam_mulai)) }} - {{ date('H:i', strtotime($jadwal->jam_selesai)) }}
                         </p>
-                        <p class="text-sm text-gray-500">{{ $jadwal->ruangan ?? 'TBA' }} • {{ $jadwal->semester->nama_semester }}</p>
+                        <p class="text-sm text-gray-500">{{ $jadwal->ruangan ?? 'TBA' }} • {{ $jadwal->semester->nama_semester ?? 'N/A' }}</p>
                         <p class="text-sm text-gray-600 mt-2">Mahasiswa: {{ $jadwal->terisi }}/{{ $jadwal->kuota }}</p>
                     </div>
                 </div>

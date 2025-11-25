@@ -1,0 +1,16 @@
+name: widget_preview_scaffold
+description: Scaffolding for Flutter Widget Previews
+publish_to: none
+version: 0.0.1
+environment:
+  sdk: ^3.11.0-165.0.dev
+dependencies:
+  flutter:
+    sdk: flutter
+  siakad_mobile:
+    path: ../..
+flutter:
+  uses-material-design: true
+dependency_overrides:
+  siakad_mobile:
+    path: ../..

@@ -23,9 +23,11 @@ class PresensiController extends Controller
         $jadwal_id = request('jadwal_id');
         $pertemuan = request('pertemuan');
         
+        // Ambil semua jadwal kuliah untuk dosen ini, tanpa filter status
         $jadwals = JadwalKuliah::where('dosen_id', $dosen->id)
-            ->where('status', 'aktif')
             ->with(['mataKuliah', 'semester'])
+            ->orderBy('semester_id', 'desc')
+            ->orderBy('hari', 'asc')
             ->get();
 
         $presensis = collect();

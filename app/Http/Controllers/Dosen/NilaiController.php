@@ -23,10 +23,28 @@ class NilaiController extends Controller
 
         $jadwal_id = request('jadwal_id');
         
+        // Ambil semua jadwal kuliah untuk dosen ini, tanpa filter status
         $jadwals = JadwalKuliah::where('dosen_id', $dosen->id)
-            ->where('status', 'aktif')
             ->with(['mataKuliah', 'semester'])
+            ->orderBy('semester_id', 'desc')
+            ->orderBy('hari', 'asc')
             ->get();
+        
+        // Debug logging
+        \Log::info('Dosen Nilai - Debug Info', [
+            'dosen_id' => $dosen->id,
+            'dosen_nama' => $dosen->nama,
+            'user_id' => Auth::id(),
+            'total_jadwal' => $jadwals->count(),
+            'jadwal_details' => $jadwals->map(function($j) {
+                return [
+                    'id' => $j->id,
+                    'mata_kuliah' => $j->mataKuliah ? $j->mataKuliah->nama_mk : 'NULL',
+                    'semester' => $j->semester ? $j->semester->nama_semester : 'NULL',
+                    'status' => $j->status
+                ];
+            })->toArray()
+        ]);
 
         $nilais = collect();
         

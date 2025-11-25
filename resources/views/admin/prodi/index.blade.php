@@ -36,7 +36,7 @@
                                 <form action="{{ route('admin.prodi.destroy', $prodi) }}" method="POST" class="inline" onsubmit="return confirm('Yakin ingin menghapus?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:text-red-900">Hapus</button>
+                                    <button type="submit" class="text-red-600 hover:text-red-900" style="cursor: pointer;">Hapus</button>
                                 </form>
                             </td>
                         </tr>

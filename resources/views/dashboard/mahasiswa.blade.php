@@ -47,6 +47,46 @@
         </div>
     @endif
 
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <a href="{{ route('payment.create', ['amount' => 1000000, 'payment_type' => 'SPP', 'description' => 'Pembayaran SPP']) }}" class="bg-blue-600 rounded-xl shadow-lg p-6 hover:shadow-xl hover:bg-blue-700 transition-all transform hover:scale-105">
+            <div class="flex items-center justify-between">
+                <div class="text-white">
+                    <p class="text-sm font-medium mb-1">Bayar SPP</p>
+                    <p class="text-2xl font-bold">SPP</p>
+                    <p class="text-xs font-medium mt-1">Rp 1.000.000</p>
+                </div>
+                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+            </div>
+        </a>
+        <a href="{{ route('payment.create', ['amount' => 5000000, 'payment_type' => 'UKT', 'description' => 'Pembayaran UKT']) }}" class="bg-green-600 rounded-xl shadow-lg p-6 hover:shadow-xl hover:bg-green-700 transition-all transform hover:scale-105">
+            <div class="flex items-center justify-between">
+                <div class="text-white">
+                    <p class="text-sm font-medium mb-1">Bayar UKT</p>
+                    <p class="text-2xl font-bold">UKT</p>
+                    <p class="text-xs font-medium mt-1">Rp 5.000.000</p>
+                </div>
+                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+            </div>
+        </a>
+        <a href="{{ route('payment.index') }}" class="rounded-xl shadow-lg p-6 hover:shadow-xl transition-all transform hover:scale-105" style="background-color: #9333ea;">
+            <div class="flex items-center justify-between">
+                <div class="text-white">
+                    <p class="text-sm font-medium mb-1">Riwayat</p>
+                    <p class="text-2xl font-bold">Pembayaran</p>
+                    <p class="text-xs font-medium mt-1">Lihat semua</p>
+                </div>
+                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                </svg>
+            </div>
+        </a>
+    </div>
+
     <!-- KRS Semester Ini -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
         <div class="p-6 border-b border-gray-200 flex items-center justify-between">

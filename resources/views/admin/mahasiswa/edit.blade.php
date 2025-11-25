@@ -32,7 +32,9 @@
                 <div>
                     <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
                     <input type="email" id="email" name="email" value="{{ old('email', $mahasiswa->user->email) }}" required
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           placeholder="contoh@email.com">
+                    <p class="text-xs text-gray-500 mt-1">Email harus valid dan memiliki domain yang dapat diverifikasi (MX record)</p>
                     @error('email') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
                 </div>
 
@@ -76,7 +78,7 @@
 
                 <div>
                     <label for="tanggal_lahir" class="block text-sm font-medium text-gray-700 mb-2">Tanggal Lahir</label>
-                    <input type="date" id="tanggal_lahir" name="tanggal_lahir" value="{{ old('tanggal_lahir', $mahasiswa->tanggal_lahir?->format('Y-m-d')) }}"
+                    <input type="date" id="tanggal_lahir" name="tanggal_lahir" value="{{ old('tanggal_lahir', $mahasiswa->tanggal_lahir ? $mahasiswa->tanggal_lahir->format('Y-m-d') : '') }}"
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
 

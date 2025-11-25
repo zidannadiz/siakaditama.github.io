@@ -25,6 +25,10 @@ class Mahasiswa extends Model
         'status',
     ];
 
+    protected $casts = [
+        'tanggal_lahir' => 'date',
+    ];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

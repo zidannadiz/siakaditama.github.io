@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Template KHS Contoh</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            font-size: 12pt;
+            margin: 2cm;
+        }
+        h1 {
+            text-align: center;
+            font-size: 16pt;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .info {
+            margin-bottom: 10px;
+        }
+        .summary {
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 10pt;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 6px;
+            text-align: left;
+        }
+        th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            text-align: center;
+        }
+        td {
+            text-align: center;
+        }
+        .no { width: 4%; }
+        .kode { width: 10%; }
+        .nama { width: 25%; }
+        .sks { width: 5%; }
+        .nilai { width: 7%; }
+        .huruf { width: 7%; }
+        .bobot { width: 7%; }
+        .nilai-sks { width: 10%; }
+        .dosen { width: 25%; }
+    </style>
+</head>
+<body>
+    <h1>KARTU HASIL STUDI (KHS)</h1>
+    
+    <div class="info">
+        <p><strong>NIM</strong>            : {NIM}</p>
+        <p><strong>Nama</strong>           : {NAMA}</p>
+        <p><strong>Program Studi</strong>  : {PROGRAM_STUDI}</p>
+        <p><strong>Semester</strong>       : {SEMESTER}</p>
+        <p><strong>Tahun Akademik</strong> : {TAHUN_AKADEMIK}</p>
+        <p><strong>Tanggal Cetak</strong>  : {TANGGAL_CETAK}</p>
+    </div>
+
+    <div class="summary">
+        <p>IP Semester    : {IP}</p>
+        <p>Total SKS      : {TOTAL_SKS}</p>
+    </div>
+
+    <h2>DAFTAR NILAI:</h2>
+    
+    <table>
+        <thead>
+            <tr>
+                <th class="no">No</th>
+                <th class="kode">Kode MK</th>
+                <th class="nama">Nama Mata Kuliah</th>
+                <th class="sks">SKS</th>
+                <th class="nilai">Nilai</th>
+                <th class="huruf">Huruf</th>
+                <th class="bobot">Bobot</th>
+                <th class="nilai-sks">Nilai x SKS</th>
+                <th class="dosen">Dosen</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{NO}</td>
+                <td>{KODE_MK}</td>
+                <td style="text-align: left;">{NAMA_MK}</td>
+                <td>{SKS}</td>
+                <td>{NILAI}</td>
+                <td>{HURUF}</td>
+                <td>{BOBOT}</td>
+                <td>{NILAI_X_SKS}</td>
+                <td style="text-align: left;">{DOSEN}</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <p style="margin-top: 30px; font-size: 10pt; color: #666;">
+        <strong>Catatan:</strong> Baris tabel dengan placeholder {NO}, {KODE_MK}, {NAMA_MK}, {SKS}, {NILAI}, {HURUF}, {BOBOT}, {NILAI_X_SKS}, {DOSEN} 
+        akan otomatis di-clone sesuai jumlah nilai saat generate.
+    </p>
+</body>
+</html>
+

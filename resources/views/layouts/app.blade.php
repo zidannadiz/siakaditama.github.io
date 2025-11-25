@@ -124,14 +124,16 @@
             </div>
         </nav>
 
-        <div class="flex-1 flex">
+        <div class="flex-1 flex overflow-hidden">
             <!-- Sidebar -->
             @auth
-                @include('layouts.sidebar')
+                <div class="flex-shrink-0 overflow-y-auto" style="height: calc(100vh - 64px);">
+                    @include('layouts.sidebar')
+                </div>
             @endauth
 
             <!-- Main Content -->
-            <main class="flex-1 overflow-y-auto">
+            <main class="flex-1 overflow-y-auto" style="height: calc(100vh - 64px);">
                 <div class="py-6">
                     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         @if(session('success'))
@@ -164,7 +166,194 @@
     </div>
     @stack('scripts')
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="display: none; z-index: 99999; position: fixed;">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 transform transition-all relative" style="z-index: 100000;" onclick="event.stopPropagation()">
+            <div class="p-6">
+                <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full">
+                    <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 text-center mb-2" id="confirmTitle">Konfirmasi Hapus</h3>
+                <p class="text-sm text-gray-600 text-center mb-6" id="confirmMessage">Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.</p>
+                <div class="flex space-x-3">
+                    <button type="button" onclick="closeConfirmModal()" class="flex-1 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors font-medium" style="background-color: #e5e7eb !important; color: #374151 !important; border: none !important; cursor: pointer;">
+                        Batal
+                    </button>
+                    <button type="button" id="confirmButton" onclick="executeConfirm()" class="flex-1 px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium" style="background-color: #dc2626 !important; color: #ffffff !important; border: none !important; cursor: pointer;">
+                        Ya, Hapus
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        (function() {
+            let confirmForm = null;
+
+            function showConfirmModal(title, message, form) {
+                const titleEl = document.getElementById('confirmTitle');
+                const messageEl = document.getElementById('confirmMessage');
+                const modal = document.getElementById('confirmModal');
+                
+                if (!modal) {
+                    console.error('Modal not found!');
+                    return false;
+                }
+                
+                if (titleEl) titleEl.textContent = title || 'Konfirmasi Hapus';
+                if (messageEl) messageEl.textContent = message || 'Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.';
+                
+                confirmForm = form;
+                
+                modal.style.display = 'flex';
+                modal.style.zIndex = '99999';
+                modal.style.position = 'fixed';
+                document.body.style.overflow = 'hidden';
+                
+                console.log('Modal should be visible now');
+                return true;
+            }
+
+            function closeConfirmModal() {
+                const modal = document.getElementById('confirmModal');
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+                document.body.style.overflow = '';
+                confirmForm = null;
+            }
+
+            function executeConfirm() {
+                if (confirmForm) {
+                    confirmForm.submit();
+                }
+                closeConfirmModal();
+            }
+
+            // Make functions global
+            window.showConfirmModal = showConfirmModal;
+            window.closeConfirmModal = closeConfirmModal;
+            window.executeConfirm = executeConfirm;
+            window.confirmForm = function() { return confirmForm; };
+        })();
+
+        // Close modal when clicking outside - wait for modal to exist
+        setTimeout(function() {
+            const modal = document.getElementById('confirmModal');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closeConfirmModal();
+                    }
+                });
+            }
+        }, 100);
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeConfirmModal();
+            }
+        });
+
+        // Function to confirm delete
+        function confirmDelete(formId, message) {
+            const form = document.getElementById(formId);
+            if (!form) {
+                console.error('Form not found:', formId);
+                return;
+            }
+            showConfirmModal('Konfirmasi Hapus', message || 'Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.', form);
+        }
+        
+        // Make it global
+        window.confirmDelete = confirmDelete;
+
+        // Initialize delete buttons - Simple and direct approach
+        function initDeleteButtons() {
+            // Handle forms with class delete-form
+            document.querySelectorAll('form.delete-form .delete-btn').forEach(function(button) {
+                // Remove existing listeners to avoid duplicates
+                const newButton = button.cloneNode(true);
+                button.parentNode.replaceChild(newButton, button);
+                
+                newButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const form = newButton.closest('form');
+                    if (!form) {
+                        console.error('Form not found');
+                        return;
+                    }
+                    
+                    const message = form.getAttribute('data-message') || 'Apakah Anda yakin ingin menghapus data ini?';
+                    
+                    console.log('Delete button clicked, showing modal...');
+                    if (window.showConfirmModal) {
+                        const result = window.showConfirmModal('Konfirmasi Hapus', message, form);
+                        if (!result) {
+                            console.error('Failed to show modal');
+                        }
+                    } else {
+                        console.error('showConfirmModal function not found');
+                    }
+                });
+            });
+            
+            // Handle forms with onsubmit containing confirm
+            document.querySelectorAll('form[onsubmit*="confirm"]').forEach(function(form) {
+                if (form.classList.contains('delete-form')) return; // Skip already handled
+                
+                const onsubmit = form.getAttribute('onsubmit');
+                if (onsubmit && onsubmit.includes('confirm')) {
+                    // Extract message from confirm
+                    const match = onsubmit.match(/confirm\(['"]([^'"]+)['"]\)/);
+                    const message = match ? match[1] : 'Apakah Anda yakin ingin menghapus data ini?';
+                    
+                    // Remove onsubmit attribute
+                    form.removeAttribute('onsubmit');
+                    
+                    // Find submit button and change to button type
+                    const submitButton = form.querySelector('button[type="submit"]');
+                    if (submitButton) {
+                        submitButton.type = 'button';
+                        submitButton.classList.add('delete-btn');
+                        form.classList.add('delete-form');
+                        form.setAttribute('data-message', message);
+                        
+                        submitButton.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            
+                            if (window.showConfirmModal) {
+                                window.showConfirmModal('Konfirmasi Hapus', message, form);
+                            }
+                        });
+                    }
+                }
+            });
+        }
+
+        // Initialize multiple times to catch dynamic content
+        function runInit() {
+            initDeleteButtons();
+        }
+
+        // Run on DOM ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', runInit);
+        } else {
+            runInit();
+        }
+        
+        // Also run after a short delay to catch any late-loading content
+        setTimeout(runInit, 500);
+
         function markAsRead(notifikasiId) {
             fetch(`/notifikasi/${notifikasiId}/read`, {
                 method: 'POST',

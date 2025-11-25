@@ -13,6 +13,7 @@ use App\Models\Prodi;
 use App\Models\Semester;
 use App\Models\Nilai;
 use App\Models\Presensi;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -28,6 +29,10 @@ class AdminDashboardController extends Controller
             'krs_pending' => KRS::where('status', 'pending')->count(),
             'krs_approved' => KRS::where('status', 'disetujui')->count(),
             'total_presensi' => Presensi::count(),
+            'total_payment' => Payment::count(),
+            'payment_pending' => Payment::where('status', 'pending')->count(),
+            'payment_paid' => Payment::where('status', 'paid')->count(),
+            'payment_total_amount' => Payment::where('status', 'paid')->sum('total_amount'),
         ];
 
         // Grafik Mahasiswa per Prodi
@@ -41,12 +46,16 @@ class AdminDashboardController extends Controller
         });
 
         // Grafik KRS per Semester
-        $krs_per_semester = Semester::withCount('krs')->orderBy('tahun_akademik')->orderBy('nama_semester')->get()->map(function($semester) {
-            return [
-                'label' => $semester->nama_semester . ' ' . $semester->tahun_akademik,
-                'value' => $semester->krs_count
-            ];
-        });
+        $krs_per_semester = Semester::withCount('krs')
+            ->orderBy('tahun_ajaran', 'desc')
+            ->orderBy('jenis', 'asc')
+            ->get()
+            ->map(function($semester) {
+                return [
+                    'label' => $semester->nama_semester . ' ' . $semester->tahun_ajaran,
+                    'value' => $semester->krs_count
+                ];
+            });
 
         // Grafik Distribusi Nilai (Huruf Mutu)
         $distribusi_nilai = Nilai::select('huruf_mutu', DB::raw('count(*) as total'))

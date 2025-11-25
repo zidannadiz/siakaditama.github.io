@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Dosen;
 use App\Models\User;
+use App\Rules\ValidEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -26,7 +27,7 @@ class DosenController extends Controller
         $validated = $request->validate([
             'nidn' => 'required|string|max:20|unique:dosens,nidn',
             'nama' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'email' => ['required', new ValidEmail(), 'unique:users,email'],
             'password' => 'required|string|min:8',
             'jenis_kelamin' => 'required|in:L,P',
             'tempat_lahir' => 'nullable|string',
@@ -71,7 +72,7 @@ class DosenController extends Controller
         $validated = $request->validate([
             'nidn' => 'required|string|max:20|unique:dosens,nidn,' . $dosen->id,
             'nama' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $dosen->user_id,
+            'email' => ['required', new ValidEmail(), 'unique:users,email,' . $dosen->user_id],
             'password' => 'nullable|string|min:8',
             'jenis_kelamin' => 'required|in:L,P',
             'tempat_lahir' => 'nullable|string',

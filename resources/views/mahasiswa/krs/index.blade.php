@@ -60,7 +60,7 @@
                                     <form action="{{ route('mahasiswa.krs.destroy', $krs) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus KRS ini?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:text-red-800 text-sm font-medium">
+                                        <button type="submit" class="text-red-600 hover:text-red-800 text-sm font-medium" style="cursor: pointer;">
                                             Hapus
                                         </button>
                                     </form>

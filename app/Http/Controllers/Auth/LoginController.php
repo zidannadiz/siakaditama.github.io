@@ -25,9 +25,13 @@ class LoginController extends Controller
         $remember = $request->filled('remember');
 
         if (Auth::attempt($credentials, $remember)) {
+            $user = Auth::user();
+            
+            // Regenerate session ID for security
             $request->session()->regenerate();
             
-            $user = Auth::user();
+            // Ensure session is saved to database (for database driver)
+            $request->session()->save();
             
             return match($user->role) {
                 'admin' => redirect()->route('admin.dashboard'),

@@ -21,6 +21,12 @@ use App\Http\Controllers\Dosen\PresensiController;
 use App\Http\Controllers\Mahasiswa\PresensiController as MahasiswaPresensiController;
 use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Chat\ConversationController;
+use App\Http\Controllers\Forum\ForumController;
+use App\Http\Controllers\QnA\QuestionController;
+use App\Http\Controllers\Payment\PaymentController;
+use App\Http\Controllers\Admin\TemplateKrsKhsController;
+use App\Http\Controllers\KrsKhs\GenerateKrsKhsController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -32,6 +38,10 @@ Route::get('/', function () {
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+// Xendit Webhook (public, tanpa auth & CSRF)
+Route::post('/payment/xendit/webhook', [\App\Http\Controllers\Payment\XenditWebhookController::class, 'handleCallback'])
+    ->name('payment.xendit.webhook');
 
 // Dashboard routes
 Route::middleware(['auth'])->group(function () {
@@ -61,6 +71,63 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/krs', [AdminKRSController::class, 'index'])->name('krs.index');
         Route::post('/krs/{krs}/approve', [AdminKRSController::class, 'approve'])->name('krs.approve');
         Route::post('/krs/{krs}/reject', [AdminKRSController::class, 'reject'])->name('krs.reject');
+        
+        // Payment management
+        Route::prefix('payment')->name('payment.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\PaymentController::class, 'index'])->name('index');
+            Route::get('/{payment}', [\App\Http\Controllers\Admin\PaymentController::class, 'show'])->name('show');
+            Route::post('/{payment}/verify', [\App\Http\Controllers\Admin\PaymentController::class, 'verify'])->name('verify');
+            Route::post('/{payment}/cancel', [\App\Http\Controllers\Admin\PaymentController::class, 'cancel'])->name('cancel');
+            Route::get('/statistics', [\App\Http\Controllers\Admin\PaymentController::class, 'statistics'])->name('statistics');
+        });
+        
+        // Bank management
+        Route::prefix('bank')->name('bank.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\BankController::class, 'index'])->name('index');
+            Route::get('/{bank}/edit', [\App\Http\Controllers\Admin\BankController::class, 'edit'])->name('edit');
+            Route::put('/{bank}', [\App\Http\Controllers\Admin\BankController::class, 'update'])->name('update');
+            Route::post('/{bank}/toggle-status', [\App\Http\Controllers\Admin\BankController::class, 'toggleStatus'])->name('toggle-status');
+        });
+        
+        // Template KRS/KHS management
+        Route::prefix('template-krs-khs')->name('template-krs-khs.')->group(function () {
+            Route::get('/', [TemplateKrsKhsController::class, 'index'])->name('index');
+            Route::get('/create', [TemplateKrsKhsController::class, 'create'])->name('create');
+            Route::post('/', [TemplateKrsKhsController::class, 'store'])->name('store');
+            Route::get('/{templateKrsKh}/edit', [TemplateKrsKhsController::class, 'edit'])->name('edit');
+            Route::put('/{templateKrsKh}', [TemplateKrsKhsController::class, 'update'])->name('update');
+            Route::delete('/{templateKrsKh}', [TemplateKrsKhsController::class, 'destroy'])->name('destroy');
+            Route::post('/{templateKrsKh}/toggle-status', [TemplateKrsKhsController::class, 'toggleStatus'])->name('toggle-status');
+            Route::get('/{templateKrsKh}/download', [TemplateKrsKhsController::class, 'download'])->name('download');
+        });
+        
+        // Generate KRS/KHS (for admin)
+        Route::prefix('generate-krs-khs')->name('generate-krs-khs.')->group(function () {
+            Route::get('/', [GenerateKrsKhsController::class, 'showForm'])->name('index');
+            Route::post('/generate', [GenerateKrsKhsController::class, 'generate'])->name('generate');
+        });
+        
+        // Laporan
+        Route::prefix('laporan')->name('laporan.')->group(function () {
+            // Laporan Pembayaran
+            Route::get('/pembayaran', [\App\Http\Controllers\Admin\LaporanPembayaranController::class, 'index'])->name('pembayaran.index');
+            Route::get('/pembayaran/export-excel', [\App\Http\Controllers\Admin\LaporanPembayaranController::class, 'exportExcel'])->name('pembayaran.export-excel');
+            Route::get('/pembayaran/export-pdf', [\App\Http\Controllers\Admin\LaporanPembayaranController::class, 'exportPdf'])->name('pembayaran.export-pdf');
+            
+            // Laporan Akademik
+            Route::get('/akademik', [\App\Http\Controllers\Admin\LaporanAkademikController::class, 'index'])->name('akademik.index');
+            Route::get('/akademik/export-excel', [\App\Http\Controllers\Admin\LaporanAkademikController::class, 'exportExcel'])->name('akademik.export-excel');
+            Route::get('/akademik/export-pdf', [\App\Http\Controllers\Admin\LaporanAkademikController::class, 'exportPdf'])->name('akademik.export-pdf');
+            Route::get('/akademik/presensi', [\App\Http\Controllers\Admin\LaporanAkademikController::class, 'statistikPresensi'])->name('akademik.presensi');
+        });
+        
+        // Statistik Presensi
+        Route::get('/statistik-presensi', [\App\Http\Controllers\Admin\StatistikPresensiController::class, 'index'])->name('statistik-presensi.index');
+        Route::get('/statistik-presensi-per-prodi', [\App\Http\Controllers\Admin\StatistikPresensiPerProdiController::class, 'index'])->name('statistik-presensi-per-prodi.index');
+        
+        // Kalender Akademik
+        Route::get('/kalender-akademik/get-events', [\App\Http\Controllers\Admin\KalenderAkademikController::class, 'getEvents'])->name('kalender-akademik.get-events');
+        Route::resource('kalender-akademik', \App\Http\Controllers\Admin\KalenderAkademikController::class);
     });
 
     // Dosen routes
@@ -76,6 +143,14 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/presensi/create/{jadwal_id}', [PresensiController::class, 'create'])->name('presensi.create');
         Route::post('/presensi/{jadwal_id}', [PresensiController::class, 'store'])->name('presensi.store');
         Route::get('/presensi/{jadwal_id}', [PresensiController::class, 'show'])->name('presensi.show');
+        
+        // Statistik Presensi
+        Route::get('/statistik-presensi', [\App\Http\Controllers\Dosen\StatistikPresensiController::class, 'index'])->name('statistik-presensi.index');
+        Route::get('/statistik-presensi-per-prodi', [\App\Http\Controllers\Dosen\StatistikPresensiPerProdiController::class, 'index'])->name('statistik-presensi-per-prodi.index');
+        
+        // Kalender Akademik
+        Route::get('/kalender-akademik', [\App\Http\Controllers\Dosen\KalenderAkademikController::class, 'index'])->name('kalender-akademik.index');
+        Route::get('/kalender-akademik/get-events', [\App\Http\Controllers\Dosen\KalenderAkademikController::class, 'getEvents'])->name('kalender-akademik.get-events');
     });
 
     // Mahasiswa routes
@@ -86,6 +161,21 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/presensi', [MahasiswaPresensiController::class, 'index'])->name('presensi.index');
         Route::get('/export/krs/{semester_id?}', [ExportController::class, 'exportKRS'])->name('export.krs');
         Route::get('/export/khs/{semester_id?}', [ExportController::class, 'exportKHS'])->name('export.khs');
+        Route::get('/transcript', [\App\Http\Controllers\Mahasiswa\TranscriptController::class, 'index'])->name('transcript.index');
+        Route::get('/transcript/download', [\App\Http\Controllers\Mahasiswa\TranscriptController::class, 'download'])->name('transcript.download');
+        
+        // Generate KRS/KHS
+        Route::prefix('generate-krs-khs')->name('generate-krs-khs.')->group(function () {
+            Route::get('/', [GenerateKrsKhsController::class, 'showForm'])->name('index');
+            Route::post('/generate', [GenerateKrsKhsController::class, 'generate'])->name('generate');
+        });
+        
+        // Statistik Keaktifan
+        Route::get('/statistik-keaktifan', [\App\Http\Controllers\Mahasiswa\StatistikKeaktifanController::class, 'index'])->name('statistik-keaktifan.index');
+        
+        // Kalender Akademik
+        Route::get('/kalender-akademik', [\App\Http\Controllers\Mahasiswa\KalenderAkademikController::class, 'index'])->name('kalender-akademik.index');
+        Route::get('/kalender-akademik/get-events', [\App\Http\Controllers\Mahasiswa\KalenderAkademikController::class, 'getEvents'])->name('kalender-akademik.get-events');
     });
 
     // Notifikasi routes (untuk semua role)
@@ -102,5 +192,43 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', [ProfileController::class, 'show'])->name('show');
         Route::put('/', [ProfileController::class, 'update'])->name('update');
         Route::put('/password', [ProfileController::class, 'updatePassword'])->name('password.update');
+    });
+
+    // Chat routes (untuk semua role)
+    Route::prefix('chat')->name('chat.')->group(function () {
+        Route::get('/', [ConversationController::class, 'index'])->name('index');
+        Route::get('/create', [ConversationController::class, 'create'])->name('create');
+        Route::post('/', [ConversationController::class, 'store'])->name('store');
+        Route::get('/{conversation}', [ConversationController::class, 'show'])->name('show');
+        Route::post('/{conversation}/message', [ConversationController::class, 'sendMessage'])->name('message');
+    });
+
+    // Forum routes (untuk semua role)
+    Route::prefix('forum')->name('forum.')->group(function () {
+        Route::get('/', [ForumController::class, 'index'])->name('index');
+        Route::get('/create', [ForumController::class, 'create'])->name('create');
+        Route::post('/', [ForumController::class, 'store'])->name('store');
+        Route::get('/{forumTopic}', [ForumController::class, 'show'])->name('show');
+        Route::post('/{forumTopic}/reply', [ForumController::class, 'reply'])->name('reply');
+    });
+
+    // Q&A routes (untuk semua role)
+    Route::prefix('qna')->name('qna.')->group(function () {
+        Route::get('/', [QuestionController::class, 'index'])->name('index');
+        Route::get('/create', [QuestionController::class, 'create'])->name('create');
+        Route::post('/', [QuestionController::class, 'store'])->name('store');
+        Route::get('/{question}', [QuestionController::class, 'show'])->name('show');
+        Route::post('/{question}/answer', [QuestionController::class, 'answer'])->name('answer');
+        Route::post('/{question}/best-answer/{answer}', [QuestionController::class, 'markBestAnswer'])->name('best-answer');
+    });
+
+    // Payment routes (untuk semua role)
+    Route::prefix('payment')->name('payment.')->group(function () {
+        Route::get('/', [PaymentController::class, 'index'])->name('index');
+        Route::get('/create', [PaymentController::class, 'create'])->name('create');
+        Route::post('/', [PaymentController::class, 'store'])->name('store');
+        Route::get('/{payment}', [PaymentController::class, 'show'])->name('show');
+        Route::post('/{payment}/cancel', [PaymentController::class, 'cancel'])->name('cancel');
+        Route::post('/{payment}/verify', [PaymentController::class, 'verify'])->name('verify')->middleware('role:admin');
     });
 });

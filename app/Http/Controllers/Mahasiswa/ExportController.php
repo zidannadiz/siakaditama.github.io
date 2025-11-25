@@ -7,13 +7,22 @@ use App\Models\Mahasiswa;
 use App\Models\KRS;
 use App\Models\Nilai;
 use App\Models\Semester;
+use App\Models\TemplateKrsKhs;
+use App\Services\WordTemplateService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class ExportController extends Controller
 {
-    public function exportKRS($semester_id = null)
+    protected $wordTemplateService;
+
+    public function __construct(WordTemplateService $wordTemplateService)
+    {
+        $this->wordTemplateService = $wordTemplateService;
+    }
+
+    public function exportKRS(Request $request, $semester_id = null)
     {
         $mahasiswa = Mahasiswa::with('prodi')->where('user_id', Auth::id())->firstOrFail();
         
@@ -23,6 +32,40 @@ class ExportController extends Controller
             $semester = Semester::where('status', 'aktif')->firstOrFail();
         }
 
+        // Cek apakah ada template KRS aktif
+        $templateKrs = TemplateKrsKhs::where('jenis', 'krs')
+            ->where('is_active', true)
+            ->first();
+
+        // Jika ada template aktif, gunakan template Word
+        if ($templateKrs) {
+            try {
+                $tanggalCetak = $request->input('tanggal_cetak', null);
+                
+                $result = $this->wordTemplateService->generateDocument(
+                    $templateKrs->id,
+                    $mahasiswa->id,
+                    $semester_id,
+                    $tanggalCetak
+                );
+
+                return response()->download($result['path'], $result['filename']);
+            } catch (\Exception $e) {
+                // Jika error, fallback ke PDF lama
+                \Log::error('Error generating KRS from template: ' . $e->getMessage());
+                return $this->exportKRSPdf($mahasiswa, $semester);
+            }
+        }
+
+        // Jika tidak ada template, gunakan PDF lama
+        return $this->exportKRSPdf($mahasiswa, $semester);
+    }
+
+    /**
+     * Fallback: Generate KRS sebagai PDF (method lama)
+     */
+    protected function exportKRSPdf($mahasiswa, $semester)
+    {
         $krs_list = KRS::where('mahasiswa_id', $mahasiswa->id)
             ->where('semester_id', $semester->id)
             ->where('status', 'disetujui')
@@ -40,7 +83,7 @@ class ExportController extends Controller
         $pdf->setOption('margin-left', 15);
         $pdf->setOption('margin-right', 15);
         
-        $filename = 'KRS_' . $mahasiswa->nim . '_' . str_replace(['/', '\\'], '-', $semester->nama_semester) . '.pdf';
+        $filename = 'KRS_' . $mahasiswa->nim . '_' . str_replace(['/', '\\'], '-', $semester->nama_semester ?? '') . '.pdf';
         $filename = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $filename);
         
         return $pdf->download($filename);

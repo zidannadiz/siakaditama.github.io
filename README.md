@@ -28,6 +28,12 @@ Sistem Informasi Akademik modern yang dibangun dengan Laravel 11, Blade, dan Tai
 - ✅ Target pengumuman (Semua, Mahasiswa, Dosen, Admin)
 - ✅ Pin pengumuman penting
 
+### 5. API untuk Mobile App
+- ✅ RESTful API dengan Laravel Sanctum
+- ✅ Autentikasi berbasis token
+- ✅ Endpoint lengkap untuk semua fitur
+- ✅ Support untuk Flutter, React Native, dll
+
 ## Instalasi
 
 ### 1. Clone atau Copy Project
@@ -172,6 +178,7 @@ IPK = Total (SKS × Bobot) / Total SKS
 
 - **Backend**: Laravel 11
 - **Frontend**: Blade Templates + Tailwind CSS 4
+- **API**: Laravel Sanctum (Token Authentication)
 - **Database**: SQLite (default) / MySQL
 - **Build Tool**: Vite
 
@@ -201,7 +208,8 @@ SIAKAD-BARU/
 │   ├── css/
 │   └── js/
 └── routes/
-    └── web.php              # Web Routes
+    ├── web.php              # Web Routes
+    └── api.php              # API Routes untuk Mobile
 ```
 
 ## Catatan Penting
@@ -210,6 +218,44 @@ SIAKAD-BARU/
 2. **Kuota Kelas**: Sistem akan mengecek kuota saat mahasiswa mengambil KRS
 3. **Persetujuan KRS**: Admin harus menyetujui KRS sebelum mahasiswa bisa melihat nilai
 4. **Input Nilai**: Dosen hanya bisa input nilai untuk kelas yang diampunya
+
+## API untuk Mobile App
+
+Aplikasi ini memiliki API lengkap yang siap digunakan untuk aplikasi mobile (Flutter, React Native, dll).
+
+### Base URL
+```
+http://localhost:8000/api
+```
+
+### Quick Start
+1. **Login untuk mendapatkan token:**
+   ```bash
+   POST /api/login
+   Body: {"email": "user@example.com", "password": "password"}
+   ```
+
+2. **Gunakan token untuk request selanjutnya:**
+   ```
+   Headers: Authorization: Bearer {token}
+   ```
+
+### Dokumentasi Lengkap
+- 📖 **API Documentation**: Lihat `API_DOCUMENTATION.md`
+- 📱 **Mobile App Setup**: Lihat `MOBILE_APP_SETUP.md`
+- 🧪 **API Testing**: Lihat `API_TESTING.md`
+
+### Endpoint Utama
+- `POST /api/login` - Login
+- `GET /api/dashboard` - Dashboard (per role)
+- `GET /api/mahasiswa/krs` - KRS Mahasiswa
+- `GET /api/mahasiswa/khs` - KHS Mahasiswa
+- `GET /api/dosen/nilai` - Nilai (Dosen)
+- `POST /api/dosen/presensi/{id}` - Input Presensi
+- `GET /api/notifikasi` - Notifikasi
+- Dan banyak lagi...
+
+**Catatan**: Web application tetap berfungsi normal, API adalah tambahan untuk mobile app.
 
 ## Development
 
@@ -226,6 +272,14 @@ npm run dev
 ```bash
 php artisan migrate
 php artisan migrate:fresh  # Reset database
+```
+
+### Test API
+```bash
+# Test login
+curl -X POST http://localhost:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"password"}'
 ```
 
 ## License
