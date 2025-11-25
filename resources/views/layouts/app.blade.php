@@ -183,7 +183,7 @@
                         Batal
                     </button>
                     <button type="button" id="confirmButton" onclick="executeConfirm()" class="flex-1 px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium" style="background-color: #dc2626 !important; color: #ffffff !important; border: none !important; cursor: pointer;">
-                        Ya, Hapus
+                        Ya, Lanjutkan
                     </button>
                 </div>
             </div>
@@ -365,7 +365,8 @@
         }
 
         // Pastikan semua form POST memiliki CSRF token yang valid
-        document.addEventListener('DOMContentLoaded', function() {
+        // Update token setiap kali halaman di-load untuk handle multiple tabs
+        function updateCsrfTokens() {
             const csrfToken = document.querySelector('meta[name="csrf-token"]');
             if (csrfToken) {
                 // Update semua form dengan token terbaru
@@ -373,8 +374,25 @@
                     let csrfInput = form.querySelector('input[name="_token"]');
                     if (csrfInput) {
                         csrfInput.value = csrfToken.content;
+                    } else {
+                        // Jika tidak ada, tambahkan
+                        csrfInput = document.createElement('input');
+                        csrfInput.type = 'hidden';
+                        csrfInput.name = '_token';
+                        csrfInput.value = csrfToken.content;
+                        form.appendChild(csrfInput);
                     }
                 });
+            }
+        }
+
+        // Update token saat DOM ready
+        document.addEventListener('DOMContentLoaded', updateCsrfTokens);
+        
+        // Update token saat visibility change (tab menjadi aktif)
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                updateCsrfTokens();
             }
         });
 
@@ -395,6 +413,42 @@
                 }
             }
         });
+
+        // Session expiration handler - DISABLED
+        // Session tidak akan expired meskipun tidak ada aktivitas atau beralih tab
+        // User hanya akan logout jika melakukan logout manual
+        (function() {
+            // Cek apakah user sudah login (ada route session.check yang memerlukan auth)
+            // Jika tidak bisa akses route ini, berarti user belum login atau di halaman login
+            function checkIfUserLoggedIn() {
+                return fetch('{{ route("session.check") }}', {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    }
+                })
+                .then(response => {
+                    // Jika response OK, berarti user sudah login
+                    return response.ok;
+                })
+                .catch(() => {
+                    // Jika error, berarti user belum login atau di halaman login
+                    return false;
+                });
+            }
+            
+            // Update CSRF token saat tab menjadi aktif (untuk handle multiple tabs)
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    updateCsrfTokens();
+                }
+            });
+            
+            // Tidak ada session expiration handler yang aktif
+            // Session akan tetap valid sampai user logout manual atau browser ditutup
+        })();
     </script>
 </body>
 </html>

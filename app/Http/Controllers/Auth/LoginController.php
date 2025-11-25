@@ -33,6 +33,15 @@ class LoginController extends Controller
             // Ensure session is saved to database (for database driver)
             $request->session()->save();
             
+            // Check if there's a QR token to process after login
+            if (session('qr_token') && $user->role === 'mahasiswa') {
+                $qrToken = session('qr_token');
+                session()->forget(['qr_token', 'redirect_after_login']);
+                
+                // Redirect to public scan route to process the QR code
+                return redirect()->route('qr-presensi.public-scan', $qrToken);
+            }
+            
             return match($user->role) {
                 'admin' => redirect()->route('admin.dashboard'),
                 'dosen' => redirect()->route('dosen.dashboard'),

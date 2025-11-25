@@ -30,6 +30,24 @@
                 </div>
             @endif
 
+            @if(session('info'))
+                <div class="mb-4 bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg">
+                    <p class="text-sm">{{ session('info') }}</p>
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+                    <p class="text-sm">{{ session('error') }}</p>
+                </div>
+            @endif
+
+            @if(session('success'))
+                <div class="mb-4 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
+                    <p class="text-sm">{{ session('success') }}</p>
+                </div>
+            @endif
+
             <form method="POST" action="{{ route('login') }}" class="space-y-6">
                 @csrf
                 

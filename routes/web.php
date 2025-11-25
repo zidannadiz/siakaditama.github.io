@@ -43,6 +43,10 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::post('/payment/xendit/webhook', [\App\Http\Controllers\Payment\XenditWebhookController::class, 'handleCallback'])
     ->name('payment.xendit.webhook');
 
+// Public route untuk scan QR code token (bisa diakses tanpa login)
+Route::get('/qr-scan/{token}', [\App\Http\Controllers\Mahasiswa\QrCodePresensiController::class, 'publicScan'])
+    ->name('qr-presensi.public-scan');
+
 // Dashboard routes
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', function () {
@@ -54,6 +58,14 @@ Route::middleware(['auth'])->group(function () {
             default => redirect()->route('login'),
         };
     })->name('dashboard');
+    
+    // Route untuk check session status (AJAX)
+    Route::get('/session/check', function() {
+        return response()->json([
+            'valid' => true,
+            'lifetime' => config('session.lifetime', 120), // dalam menit
+        ]);
+    })->name('session.check');
 
     // Admin routes
     Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -143,6 +155,28 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/presensi/create/{jadwal_id}', [PresensiController::class, 'create'])->name('presensi.create');
         Route::post('/presensi/{jadwal_id}', [PresensiController::class, 'store'])->name('presensi.store');
         Route::get('/presensi/{jadwal_id}', [PresensiController::class, 'show'])->name('presensi.show');
+        Route::get('/presensi/{jadwal_id}/edit/{pertemuan}', [PresensiController::class, 'edit'])->name('presensi.edit');
+        Route::put('/presensi/{jadwal_id}/{pertemuan}', [PresensiController::class, 'update'])->name('presensi.update');
+        
+        // QR Code Presensi - DINONAKTIFKAN
+        // Route::prefix('qr-presensi')->name('qr-presensi.')->group(function () {
+        //     Route::get('/', [\App\Http\Controllers\Dosen\QrCodePresensiController::class, 'index'])->name('index');
+        //     Route::post('/generate/{jadwal_id}', [\App\Http\Controllers\Dosen\QrCodePresensiController::class, 'generate'])->name('generate');
+        //     Route::get('/show/{jadwal_id}/{token}', [\App\Http\Controllers\Dosen\QrCodePresensiController::class, 'show'])->name('show');
+        //     Route::post('/stop/{token}', [\App\Http\Controllers\Dosen\QrCodePresensiController::class, 'stop'])->name('stop');
+        //     Route::get('/status/{token}', [\App\Http\Controllers\Dosen\QrCodePresensiController::class, 'status'])->name('status');
+        // });
+        
+        // Presensi Kelas
+        Route::prefix('presensi-kelas')->name('presensi-kelas.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Dosen\PresensiKelasController::class, 'index'])->name('index');
+            Route::post('/buka/{jadwal_id}', [\App\Http\Controllers\Dosen\PresensiKelasController::class, 'bukaKelas'])->name('buka');
+            Route::get('/kelas/{class_session_id}', [\App\Http\Controllers\Dosen\PresensiKelasController::class, 'showKelas'])->name('show');
+            Route::post('/tutup/{class_session_id}', [\App\Http\Controllers\Dosen\PresensiKelasController::class, 'tutupKelas'])->name('tutup');
+            Route::post('/kick/{class_session_id}/{mahasiswa_id}', [\App\Http\Controllers\Dosen\PresensiKelasController::class, 'kickMahasiswa'])->name('kick');
+            Route::post('/update-status/{class_attendance_id}', [\App\Http\Controllers\Dosen\PresensiKelasController::class, 'updateStatus'])->name('update-status');
+            Route::get('/peserta/{class_session_id}', [\App\Http\Controllers\Dosen\PresensiKelasController::class, 'getPeserta'])->name('peserta');
+        });
         
         // Statistik Presensi
         Route::get('/statistik-presensi', [\App\Http\Controllers\Dosen\StatistikPresensiController::class, 'index'])->name('statistik-presensi.index');
@@ -159,6 +193,23 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('krs', KRSController::class)->except(['show', 'update']);
         Route::get('/khs', [KHSController::class, 'index'])->name('khs.index');
         Route::get('/presensi', [MahasiswaPresensiController::class, 'index'])->name('presensi.index');
+        
+        // QR Code Presensi - DINONAKTIFKAN
+        // Route::prefix('qr-presensi')->name('qr-presensi.')->group(function () {
+        //     Route::get('/', [\App\Http\Controllers\Mahasiswa\QrCodePresensiController::class, 'index'])->name('index');
+        //     Route::post('/scan', [\App\Http\Controllers\Mahasiswa\QrCodePresensiController::class, 'scan'])->name('scan');
+        //     Route::get('/history', [\App\Http\Controllers\Mahasiswa\QrCodePresensiController::class, 'history'])->name('history');
+        // });
+        
+        // Presensi Kelas
+        Route::prefix('presensi-kelas')->name('presensi-kelas.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Mahasiswa\PresensiKelasController::class, 'index'])->name('index');
+            Route::post('/join', [\App\Http\Controllers\Mahasiswa\PresensiKelasController::class, 'joinKelas'])->name('join');
+            Route::get('/history', [\App\Http\Controllers\Mahasiswa\PresensiKelasController::class, 'history'])->name('history');
+            Route::post('/konfirmasi-izin/{class_attendance_id}', [\App\Http\Controllers\Mahasiswa\PresensiKelasController::class, 'konfirmasiIzin'])->name('konfirmasi-izin');
+            Route::post('/konfirmasi-sakit/{class_attendance_id}', [\App\Http\Controllers\Mahasiswa\PresensiKelasController::class, 'konfirmasiSakit'])->name('konfirmasi-sakit');
+        });
+        
         Route::get('/export/krs/{semester_id?}', [ExportController::class, 'exportKRS'])->name('export.krs');
         Route::get('/export/khs/{semester_id?}', [ExportController::class, 'exportKHS'])->name('export.khs');
         Route::get('/transcript', [\App\Http\Controllers\Mahasiswa\TranscriptController::class, 'index'])->name('transcript.index');
