@@ -132,7 +132,7 @@
 function copyVA() {
     const va = '{{ $payment->virtual_account }}';
     navigator.clipboard.writeText(va).then(function() {
-        alert('Nomor Virtual Account berhasil disalin!');
+        showAlert('Nomor Virtual Account berhasil disalin!', 'success');
     }, function(err) {
         // Fallback untuk browser lama
         const textArea = document.createElement('textarea');
@@ -141,7 +141,7 @@ function copyVA() {
         textArea.select();
         document.execCommand('copy');
         document.body.removeChild(textArea);
-        alert('Nomor Virtual Account berhasil disalin!');
+        showAlert('Nomor Virtual Account berhasil disalin!', 'success');
     });
 }
 

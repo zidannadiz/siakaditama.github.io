@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Dashboard\AdminDashboardController;
 use App\Http\Controllers\Dashboard\DosenDashboardController;
 use App\Http\Controllers\Dashboard\MahasiswaDashboardController;
@@ -38,6 +40,12 @@ Route::get('/', function () {
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:5,1'); // 5 attempts per minute
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+// Password Reset Routes
+Route::get('/password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+Route::post('/password/email', [ForgotPasswordController::class, 'sendResetLinkEmail'])->middleware('throttle:5,1')->name('password.email');
+Route::get('/password/reset/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
+Route::post('/password/reset', [ResetPasswordController::class, 'reset'])->middleware('throttle:5,1')->name('password.update');
 
 // Xendit Webhook (public, tanpa auth & CSRF)
 Route::post('/payment/xendit/webhook', [\App\Http\Controllers\Payment\XenditWebhookController::class, 'handleCallback'])
@@ -102,6 +110,32 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/{bank}/toggle-status', [\App\Http\Controllers\Admin\BankController::class, 'toggleStatus'])->name('toggle-status');
         });
         
+        // Backup & Restore
+        Route::prefix('backup')->name('backup.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\BackupController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Admin\BackupController::class, 'create'])->name('create');
+            Route::post('/restore', [\App\Http\Controllers\Admin\BackupController::class, 'restore'])->name('restore');
+            Route::get('/download/{filename}', [\App\Http\Controllers\Admin\BackupController::class, 'download'])->name('download');
+            Route::delete('/{filename}', [\App\Http\Controllers\Admin\BackupController::class, 'destroy'])->name('destroy');
+        });
+        
+        // Audit Log
+        Route::prefix('audit-log')->name('audit-log.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AuditLogController::class, 'index'])->name('index');
+            Route::get('/{auditLog}', [\App\Http\Controllers\Admin\AuditLogController::class, 'show'])->name('show');
+        });
+        
+        // System Settings
+        Route::prefix('system-settings')->name('system-settings.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'index'])->name('index');
+            Route::post('/semester', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'updateSemester'])->name('update-semester');
+            Route::post('/grading', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'updateGrading'])->name('update-grading');
+            Route::post('/letter-grades', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'storeLetterGrade'])->name('store-letter-grade');
+            Route::put('/letter-grades/{letterGrade}', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'updateLetterGrade'])->name('update-letter-grade');
+            Route::delete('/letter-grades/{letterGrade}', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'deleteLetterGrade'])->name('delete-letter-grade');
+            Route::post('/app-info', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'updateAppInfo'])->name('update-app-info');
+        });
+        
         // Template KRS/KHS management
         Route::prefix('template-krs-khs')->name('template-krs-khs.')->group(function () {
             Route::get('/', [TemplateKrsKhsController::class, 'index'])->name('index');
@@ -141,6 +175,8 @@ Route::middleware(['auth'])->group(function () {
         // Kalender Akademik
         Route::get('/kalender-akademik/get-events', [\App\Http\Controllers\Admin\KalenderAkademikController::class, 'getEvents'])->name('kalender-akademik.get-events');
         Route::resource('kalender-akademik', \App\Http\Controllers\Admin\KalenderAkademikController::class);
+        // Active Users
+        Route::get('/active-users', [\App\Http\Controllers\Admin\ActiveUsersController::class, 'index'])->name('active-users.index');
     });
 
     // Dosen routes
@@ -186,6 +222,21 @@ Route::middleware(['auth'])->group(function () {
         // Kalender Akademik
         Route::get('/kalender-akademik', [\App\Http\Controllers\Dosen\KalenderAkademikController::class, 'index'])->name('kalender-akademik.index');
         Route::get('/kalender-akademik/get-events', [\App\Http\Controllers\Dosen\KalenderAkademikController::class, 'getEvents'])->name('kalender-akademik.get-events');
+        
+        // Tugas (Assignment)
+        Route::resource('assignment', \App\Http\Controllers\Dosen\AssignmentController::class);
+        Route::post('/assignment/{assignment}/grade-submission/{submission_id}', [\App\Http\Controllers\Dosen\AssignmentController::class, 'gradeSubmission'])->name('assignment.grade-submission');
+        
+        // Ujian (Exam)
+        Route::resource('exam', \App\Http\Controllers\Dosen\ExamController::class);
+        Route::post('/exam/{exam}/add-question', [\App\Http\Controllers\Dosen\ExamController::class, 'addQuestion'])->name('exam.add-question');
+        Route::post('/exam/{exam}/generate-questions', [\App\Http\Controllers\Dosen\ExamController::class, 'generateQuestions'])->name('exam.generate-questions');
+        Route::put('/exam/{exam}/question/{question}', [\App\Http\Controllers\Dosen\ExamController::class, 'updateQuestion'])->name('exam.update-question');
+        Route::delete('/exam/{exam}/question/{question}', [\App\Http\Controllers\Dosen\ExamController::class, 'deleteQuestion'])->name('exam.delete-question');
+        Route::get('/exam/{exam}/results', [\App\Http\Controllers\Dosen\ExamController::class, 'results'])->name('exam.results');
+        Route::get('/exam/{exam}/grade/{session}', [\App\Http\Controllers\Dosen\ExamController::class, 'showGradeSession'])->name('exam.grade-session');
+        Route::post('/exam/{exam}/grade/{session}', [\App\Http\Controllers\Dosen\ExamController::class, 'gradeSession'])->name('exam.grade-session.store');
+        Route::post('/exam/{exam}/grade/{session}', [\App\Http\Controllers\Dosen\ExamController::class, 'gradeSession'])->name('exam.grade-session.store');
     });
 
     // Mahasiswa routes
@@ -228,6 +279,23 @@ Route::middleware(['auth'])->group(function () {
         // Kalender Akademik
         Route::get('/kalender-akademik', [\App\Http\Controllers\Mahasiswa\KalenderAkademikController::class, 'index'])->name('kalender-akademik.index');
         Route::get('/kalender-akademik/get-events', [\App\Http\Controllers\Mahasiswa\KalenderAkademikController::class, 'getEvents'])->name('kalender-akademik.get-events');
+        
+        // Tugas (Assignment)
+        Route::get('/assignment', [\App\Http\Controllers\Mahasiswa\AssignmentController::class, 'index'])->name('assignment.index');
+        Route::get('/assignment/{assignment}', [\App\Http\Controllers\Mahasiswa\AssignmentController::class, 'show'])->name('assignment.show');
+        Route::post('/assignment/{assignment}/submit', [\App\Http\Controllers\Mahasiswa\AssignmentController::class, 'submit'])->name('assignment.submit');
+        Route::put('/assignment/{assignment}/submission/{submission}', [\App\Http\Controllers\Mahasiswa\AssignmentController::class, 'updateSubmission'])->name('assignment.update-submission');
+        Route::get('/assignment/{assignment}/download', [\App\Http\Controllers\Mahasiswa\AssignmentController::class, 'downloadFile'])->name('assignment.download');
+        
+        // Ujian (Exam)
+        Route::get('/exam', [\App\Http\Controllers\Mahasiswa\ExamController::class, 'index'])->name('exam.index');
+        Route::get('/exam/{exam}', [\App\Http\Controllers\Mahasiswa\ExamController::class, 'show'])->name('exam.show');
+        Route::post('/exam/{exam}/start', [\App\Http\Controllers\Mahasiswa\ExamController::class, 'start'])->name('exam.start');
+        Route::get('/exam/{exam}/take/{session}', [\App\Http\Controllers\Mahasiswa\ExamController::class, 'take'])->name('exam.take');
+        Route::post('/exam/{exam}/save-answer', [\App\Http\Controllers\Mahasiswa\ExamController::class, 'saveAnswer'])->name('exam.save-answer');
+        Route::post('/exam/{exam}/submit', [\App\Http\Controllers\Mahasiswa\ExamController::class, 'submit'])->name('exam.submit');
+        Route::post('/exam/{exam}/log-violation', [\App\Http\Controllers\Mahasiswa\ExamController::class, 'logViolation'])->name('exam.log-violation');
+        Route::get('/exam/{exam}/result/{session}', [\App\Http\Controllers\Mahasiswa\ExamController::class, 'result'])->name('exam.result');
     });
 
     // Notifikasi routes (untuk semua role)

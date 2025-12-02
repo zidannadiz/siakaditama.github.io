@@ -255,7 +255,7 @@
                 }
             } catch (err) {
                 console.error('Failed to copy:', err);
-                alert('Gagal menyalin link. Silakan salin manual.');
+                showAlert('Gagal menyalin link. Silakan salin manual.', 'error');
             }
         };
 

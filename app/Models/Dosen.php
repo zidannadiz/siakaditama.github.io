@@ -42,5 +42,15 @@ class Dosen extends Model
     {
         return $this->hasMany(Nilai::class);
     }
+
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(Assignment::class);
+    }
+
+    public function exams(): HasMany
+    {
+        return $this->hasMany(Exam::class);
+    }
 }
 

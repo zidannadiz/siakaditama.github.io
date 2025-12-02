@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 
 class ChatController extends Controller
@@ -106,11 +107,20 @@ class ChatController extends Controller
                   ->where('user2_id', auth()->id());
         })->first();
 
+        $isNewConversation = false;
         if (!$conversation) {
             $conversation = Conversation::create([
                 'user1_id' => auth()->id(),
                 'user2_id' => $receiverId,
             ]);
+            $isNewConversation = true;
+            
+            // Log audit - Create conversation (API)
+            $receiver = User::find($receiverId);
+            AuditLogService::logCreate(
+                $conversation,
+                "Membuat percakapan baru (API) dengan {$receiver->name} ({$receiver->email})"
+            );
         }
 
         // Create message
@@ -123,6 +133,18 @@ class ChatController extends Controller
 
         $message->update(['status' => 'delivered']);
         $conversation->update(['last_message_at' => now()]);
+        
+        // Log audit - Send message (API)
+        $receiver = User::find($receiverId);
+        $messagePreview = strlen($request->message) > 50 
+            ? substr($request->message, 0, 50) . '...' 
+            : $request->message;
+        
+        AuditLogService::logCustom(
+            'chat_send',
+            $message,
+            "Mengirim pesan chat (API) ke {$receiver->name} ({$receiver->email}): \"{$messagePreview}\""
+        );
 
         $message->load('sender:id,name,email');
 
@@ -150,14 +172,33 @@ class ChatController extends Controller
         }
 
         // Mark messages as read
-        $conversation->messages()
+        $unreadMessages = $conversation->messages()
             ->where('sender_id', '!=', auth()->id())
             ->where('is_read', false)
-            ->update([
-                'status' => 'read',
-                'is_read' => true,
-                'read_at' => now(),
-            ]);
+            ->get();
+            
+        $unreadCount = $unreadMessages->count();
+        
+        if ($unreadCount > 0) {
+            $conversation->messages()
+                ->where('sender_id', '!=', auth()->id())
+                ->where('is_read', false)
+                ->update([
+                    'status' => 'read',
+                    'is_read' => true,
+                    'read_at' => now(),
+                ]);
+            
+            // Log audit - Read messages (API)
+            $otherUser = $conversation->user1_id === auth()->id() 
+                ? $conversation->user2 
+                : $conversation->user1;
+            AuditLogService::logCustom(
+                'chat_read',
+                $conversation,
+                "Membaca {$unreadCount} pesan (API) dari {$otherUser->name} ({$otherUser->email})"
+            );
+        }
 
         $messages = $conversation->messages()
             ->with('sender:id,name,email')
@@ -213,6 +254,20 @@ class ChatController extends Controller
         $conversation->update(['last_message_at' => now()]);
 
         $message->load('sender:id,name,email');
+        
+        // Log audit - Send message (API)
+        $otherUser = $conversation->user1_id === auth()->id() 
+            ? $conversation->user2 
+            : $conversation->user1;
+        $messagePreview = strlen($request->message) > 50 
+            ? substr($request->message, 0, 50) . '...' 
+            : $request->message;
+        
+        AuditLogService::logCustom(
+            'chat_send',
+            $message,
+            "Mengirim pesan chat (API) ke {$otherUser->name} ({$otherUser->email}): \"{$messagePreview}\""
+        );
 
         return response()->json([
             'success' => true,
@@ -234,6 +289,11 @@ class ChatController extends Controller
             ], 403);
         }
 
+        $unreadMessages = $conversation->messages()
+            ->where('sender_id', '!=', auth()->id())
+            ->where('is_read', false)
+            ->get();
+            
         $updated = $conversation->messages()
             ->where('sender_id', '!=', auth()->id())
             ->where('is_read', false)
@@ -242,6 +302,18 @@ class ChatController extends Controller
                 'is_read' => true,
                 'read_at' => now(),
             ]);
+        
+        // Log audit - Mark as read (API)
+        if ($updated > 0) {
+            $otherUser = $conversation->user1_id === auth()->id() 
+                ? $conversation->user2 
+                : $conversation->user1;
+            AuditLogService::logCustom(
+                'chat_read',
+                $conversation,
+                "Menandai {$updated} pesan sebagai sudah dibaca (API) dari {$otherUser->name} ({$otherUser->email})"
+            );
+        }
 
         return response()->json([
             'success' => true,

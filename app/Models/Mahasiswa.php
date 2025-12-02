@@ -53,5 +53,15 @@ class Mahasiswa extends Model
     {
         return $this->hasMany(Presensi::class);
     }
+
+    public function assignmentSubmissions(): HasMany
+    {
+        return $this->hasMany(AssignmentSubmission::class);
+    }
+
+    public function examSessions(): HasMany
+    {
+        return $this->hasMany(ExamSession::class);
+    }
 }
 

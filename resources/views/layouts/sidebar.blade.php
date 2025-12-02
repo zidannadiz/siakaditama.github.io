@@ -12,6 +12,125 @@
             $unreadMessagesCount = 0;
         }
     }
+    
+    // Initialize notification counts
+    $assignmentNotificationCount = 0;
+    $examNotificationCount = 0;
+    $paymentNotificationCount = 0;
+    
+    if (auth()->check()) {
+        try {
+            if ($role === 'mahasiswa') {
+                $mahasiswa = \App\Models\Mahasiswa::where('user_id', auth()->id())->first();
+                if ($mahasiswa) {
+                    // Get all jadwal kuliah for this mahasiswa through KRS
+                    $jadwalIds = \App\Models\KRS::where('mahasiswa_id', $mahasiswa->id)
+                        ->where('status', 'approved')
+                        ->pluck('jadwal_kuliah_id');
+                    
+                    // Assignment notifications: tugas baru (24 jam) atau deadline mendekat (3 hari)
+                    $newAssignments = \App\Models\Assignment::whereIn('jadwal_kuliah_id', $jadwalIds)
+                        ->where('status', 'published')
+                        ->where('created_at', '>=', now()->subDay())
+                        ->whereDoesntHave('submissions', function($query) use ($mahasiswa) {
+                            $query->where('mahasiswa_id', $mahasiswa->id);
+                        })
+                        ->count();
+                    
+                    $upcomingDeadlines = \App\Models\Assignment::whereIn('jadwal_kuliah_id', $jadwalIds)
+                        ->where('status', 'published')
+                        ->whereBetween('deadline', [now(), now()->addDays(3)])
+                        ->whereDoesntHave('submissions', function($query) use ($mahasiswa) {
+                            $query->where('mahasiswa_id', $mahasiswa->id);
+                        })
+                        ->count();
+                    
+                    $assignmentNotificationCount = $newAssignments + $upcomingDeadlines;
+                    
+                    // Exam notifications: ujian baru (24 jam) atau ujian akan dimulai (24 jam)
+                    $newExams = \App\Models\Exam::whereIn('jadwal_kuliah_id', $jadwalIds)
+                        ->where('status', 'published')
+                        ->where('created_at', '>=', now()->subDay())
+                        ->whereDoesntHave('sessions', function($query) use ($mahasiswa) {
+                            $query->where('mahasiswa_id', $mahasiswa->id);
+                        })
+                        ->count();
+                    
+                    $upcomingExams = \App\Models\Exam::whereIn('jadwal_kuliah_id', $jadwalIds)
+                        ->where('status', 'published')
+                        ->where(function($query) {
+                            $query->whereNull('mulai')
+                                  ->orWhere('mulai', '<=', now()->addDay());
+                        })
+                        ->where('selesai', '>', now())
+                        ->whereDoesntHave('sessions', function($query) use ($mahasiswa) {
+                            $query->where('mahasiswa_id', $mahasiswa->id);
+                        })
+                        ->count();
+                    
+                    // Hasil ujian tersedia (baru dinilai dalam 24 jam terakhir)
+                    $completedExamsWithResults = \App\Models\ExamSession::where('mahasiswa_id', $mahasiswa->id)
+                        ->whereIn('status', ['submitted', 'auto_submitted'])
+                        ->whereNotNull('nilai')
+                        ->whereHas('exam', function($query) {
+                            $query->where('tampilkan_nilai', true);
+                        })
+                        ->where('updated_at', '>=', now()->subDay())
+                        ->count();
+                    
+                    $examNotificationCount = $newExams + $upcomingExams + $completedExamsWithResults;
+                    
+                    // Payment notifications: pembayaran pending yang akan expired atau sudah expired
+                    $pendingPayments = \App\Models\Payment::where('user_id', auth()->id())
+                        ->where('status', 'pending')
+                        ->where(function($query) {
+                            // Akan expired dalam 6 jam atau sudah expired
+                            $query->where('expired_at', '<=', now()->addHours(6))
+                                  ->orWhere('expired_at', '<', now());
+                        })
+                        ->count();
+                    
+                    $paymentNotificationCount = $pendingPayments;
+                }
+            } elseif ($role === 'dosen') {
+                $dosen = \App\Models\Dosen::where('user_id', auth()->id())->first();
+                if ($dosen) {
+                    // Assignment notifications: submissions yang belum dinilai
+                    $ungradedSubmissions = \App\Models\AssignmentSubmission::whereHas('assignment', function($query) use ($dosen) {
+                            $query->where('dosen_id', $dosen->id);
+                        })
+                        ->whereNotNull('submitted_at')
+                        ->whereNull('nilai')
+                        ->count();
+                    
+                    $assignmentNotificationCount = $ungradedSubmissions;
+                    
+                    // Exam notifications: jawaban essay yang belum dinilai
+                    $ungradedEssays = \App\Models\ExamAnswer::whereHas('examSession.exam', function($query) use ($dosen) {
+                            $query->where('dosen_id', $dosen->id);
+                        })
+                        ->whereHas('examQuestion', function($query) {
+                            $query->where('tipe', 'essay');
+                        })
+                        ->whereNotNull('jawaban_essay')
+                        ->whereNull('nilai')
+                        ->count();
+                    
+                    $examNotificationCount = $ungradedEssays;
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error calculating assignment/exam/payment notifications: ' . $e->getMessage());
+            $assignmentNotificationCount = 0;
+            $examNotificationCount = 0;
+            $paymentNotificationCount = 0;
+        }
+        
+        // Payment notifications error handling
+        if (!isset($paymentNotificationCount)) {
+            $paymentNotificationCount = 0;
+        }
+    }
 @endphp
 
 <aside class="w-64 bg-white border-r border-gray-200">
@@ -25,7 +144,7 @@
             </a>
             
             <div class="pt-4">
-                <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Pengguna</p>
+                <p class="px-4 text-xs font-semibold text-gray-500text-gray-400text-gray-400 uppercase tracking-wider">Pengguna</p>
             </div>
             
             <a href="{{ route('admin.admin.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.admin') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
@@ -36,7 +155,7 @@
             </a>
             
             <div class="pt-4">
-                <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Master Data</p>
+                <p class="px-4 text-xs font-semibold text-gray-500text-gray-400text-gray-400 uppercase tracking-wider">Master Data</p>
             </div>
             
             <a href="{{ route('admin.prodi.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.prodi') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
@@ -82,7 +201,7 @@
             </a>
             
             <div class="pt-4">
-                <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Akademik</p>
+                <p class="px-4 text-xs font-semibold text-gray-500text-gray-400 uppercase tracking-wider">Akademik</p>
             </div>
             
             <a href="{{ route('admin.krs.index') }}" class="flex items-center justify-between px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.krs') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
@@ -127,6 +246,34 @@
                 </svg>
                 <span>Kalender Akademik</span>
             </a>
+            <a href="{{ route('admin.active-users.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.active-users') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+                <span>Pengguna Aktif</span>
+            </a>
+            
+            <a href="{{ route('admin.backup.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.backup') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                <span>Backup & Restore</span>
+            </a>
+            
+            <a href="{{ route('admin.system-settings.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.system-settings') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                <span>Pengaturan Sistem</span>
+            </a>
+            
+            <a href="{{ route('admin.audit-log.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.audit-log') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <span>Audit Log</span>
+            </a>
             
             <a href="{{ route('admin.statistik-presensi.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.statistik-presensi') && !str_contains($currentRoute, 'per-prodi') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -143,7 +290,7 @@
             </a>
             
             <div class="pt-4">
-                <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Laporan</p>
+                <p class="px-4 text-xs font-semibold text-gray-500text-gray-400 uppercase tracking-wider">Laporan</p>
             </div>
             
             <a href="{{ route('admin.laporan.pembayaran.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.laporan.pembayaran') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
@@ -162,7 +309,7 @@
             
             <!-- Keuangan (untuk admin) -->
             <div class="pt-4 mt-4 border-t border-gray-200">
-                <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Keuangan</p>
+                <p class="px-4 text-xs font-semibold text-gray-500text-gray-400 uppercase tracking-wider mb-1">Keuangan</p>
                 
                 <a href="{{ route('admin.payment.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.payment') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -216,6 +363,30 @@
                 <span>Presensi Kelas</span>
             </a>
             
+            <a href="{{ route('dosen.assignment.index') }}" class="flex items-center justify-between px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'dosen.assignment') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+                <div class="flex items-center space-x-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span>Tugas</span>
+                </div>
+                @if($assignmentNotificationCount > 0)
+                    <span class="rounded-full flex-shrink-0" style="width: 10px; height: 10px; background-color: #ff0000 !important; border: 2px solid white; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.3);"></span>
+                @endif
+            </a>
+            
+            <a href="{{ route('dosen.exam.index') }}" class="flex items-center justify-between px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'dosen.exam') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+                <div class="flex items-center space-x-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                    </svg>
+                    <span>Ujian</span>
+                </div>
+                @if($examNotificationCount > 0)
+                    <span class="rounded-full flex-shrink-0" style="width: 10px; height: 10px; background-color: #ff0000 !important; border: 2px solid white; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.3);"></span>
+                @endif
+            </a>
+            
             <a href="{{ route('dosen.kalender-akademik.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'dosen.kalender-akademik') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -266,6 +437,30 @@
                 <span>Transkrip Nilai</span>
             </a>
             
+            <a href="{{ route('mahasiswa.assignment.index') }}" class="flex items-center justify-between px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'mahasiswa.assignment') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+                <div class="flex items-center space-x-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span>Tugas</span>
+                </div>
+                @if($assignmentNotificationCount > 0)
+                    <span class="rounded-full flex-shrink-0" style="width: 10px; height: 10px; background-color: #ff0000 !important; border: 2px solid white; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.3);"></span>
+                @endif
+            </a>
+            
+            <a href="{{ route('mahasiswa.exam.index') }}" class="flex items-center justify-between px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'mahasiswa.exam') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+                <div class="flex items-center space-x-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                    </svg>
+                    <span>Ujian</span>
+                </div>
+                @if($examNotificationCount > 0)
+                    <span class="rounded-full flex-shrink-0" style="width: 10px; height: 10px; background-color: #ff0000 !important; border: 2px solid white; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.3);"></span>
+                @endif
+            </a>
+            
             <a href="{{ route('mahasiswa.presensi.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'mahasiswa.presensi') && !str_starts_with($currentRoute, 'mahasiswa.qr-presensi') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
@@ -288,11 +483,16 @@
                 <span>Presensi Kelas</span>
             </a>
             
-            <a href="{{ route('payment.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'payment') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                </svg>
-                <span>Pembayaran</span>
+            <a href="{{ route('payment.index') }}" class="flex items-center justify-between px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'payment') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+                <div class="flex items-center space-x-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    <span>Pembayaran</span>
+                </div>
+                @if($paymentNotificationCount > 0)
+                    <span class="rounded-full flex-shrink-0" style="width: 10px; height: 10px; background-color: #ff0000 !important; border: 2px solid white; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.3);"></span>
+                @endif
             </a>
             
             <a href="{{ route('mahasiswa.kalender-akademik.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'mahasiswa.kalender-akademik') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
@@ -312,7 +512,7 @@
 
         <!-- Komunikasi (untuk semua role) -->
         <div class="pt-4 mt-4 border-t border-gray-200">
-            <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Komunikasi</p>
+            <p class="px-4 text-xs font-semibold text-gray-500text-gray-400 uppercase tracking-wider mb-1">Komunikasi</p>
             
             <a href="{{ route('notifikasi.index') }}" class="flex items-center justify-between px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'notifikasi') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
                 <div class="flex items-center space-x-3">

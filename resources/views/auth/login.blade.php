@@ -80,6 +80,9 @@
                                class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
                         <span class="ml-2 text-sm text-gray-600">Ingat saya</span>
                     </label>
+                    <a href="{{ route('password.request') }}" class="text-sm text-blue-600 hover:text-blue-800 hover:underline">
+                        Lupa Password?
+                    </a>
                 </div>
 
                 <button type="submit" 

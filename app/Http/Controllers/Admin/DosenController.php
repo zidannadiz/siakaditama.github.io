@@ -7,6 +7,7 @@ use App\Models\Dosen;
 use App\Models\User;
 use App\Rules\ValidEmail;
 use App\Rules\StrongPassword;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -45,7 +46,7 @@ class DosenController extends Controller
             'role' => 'dosen',
         ]);
 
-        Dosen::create([
+        $dosen = Dosen::create([
             'user_id' => $user->id,
             'nidn' => $validated['nidn'],
             'nama' => $validated['nama'],
@@ -57,6 +58,12 @@ class DosenController extends Controller
             'email' => $validated['email'],
             'status' => $validated['status'],
         ]);
+
+        // Log audit
+        AuditLogService::logCreate(
+            $dosen,
+            "Menambahkan dosen baru: {$dosen->nama} (NIDN: {$dosen->nidn})"
+        );
 
         return redirect()->route('admin.dosen.index')
             ->with('success', 'Dosen berhasil ditambahkan.');
@@ -83,6 +90,8 @@ class DosenController extends Controller
             'status' => 'required|in:aktif,nonaktif',
         ]);
 
+        $oldValues = $dosen->toArray();
+        
         $dosen->user->update([
             'name' => $validated['nama'],
             'email' => $validated['email'],
@@ -106,14 +115,35 @@ class DosenController extends Controller
             'status' => $validated['status'],
         ]);
 
+        // Log audit
+        AuditLogService::logUpdate(
+            $dosen->fresh(),
+            $oldValues,
+            $dosen->fresh()->toArray(),
+            "Mengubah data dosen: {$dosen->nama} (NIDN: {$dosen->nidn})"
+        );
+
         return redirect()->route('admin.dosen.index')
             ->with('success', 'Dosen berhasil diperbarui.');
     }
 
     public function destroy(Dosen $dosen)
     {
+        $dosenData = $dosen->toArray();
+        $dosenName = $dosen->nama;
+        $dosenNidn = $dosen->nidn;
+        
         $dosen->user->delete();
         $dosen->delete();
+        
+        // Log audit (use array since model is deleted)
+        AuditLogService::log(
+            'delete',
+            null,
+            $dosenData,
+            null,
+            "Menghapus dosen: {$dosenName} (NIDN: {$dosenNidn})"
+        );
 
         return redirect()->route('admin.dosen.index')
             ->with('success', 'Dosen berhasil dihapus.');

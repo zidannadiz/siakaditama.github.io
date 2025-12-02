@@ -51,13 +51,15 @@
                 </div>
 
                 <div class="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
-                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium" style="cursor: pointer;">
                         Simpan Perubahan
                     </button>
                 </div>
             </form>
         </div>
+    </div>
 
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <!-- Ganti Password -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 class="text-xl font-semibold text-gray-900 mb-6">Ganti Password</h2>
@@ -92,7 +94,7 @@
                 </div>
 
                 <div class="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
-                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium" style="cursor: pointer;">
                         Ubah Password
                     </button>
                 </div>

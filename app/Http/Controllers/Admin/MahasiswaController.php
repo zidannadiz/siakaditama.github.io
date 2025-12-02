@@ -8,8 +8,11 @@ use App\Models\Prodi;
 use App\Models\User;
 use App\Rules\ValidEmail;
 use App\Rules\StrongPassword;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MahasiswaController extends Controller
 {
@@ -31,7 +34,7 @@ class MahasiswaController extends Controller
             'nim' => 'required|string|max:20|unique:mahasiswas,nim',
             'nama' => 'required|string|max:255',
             'email' => ['required', new ValidEmail(), 'unique:users,email'],
-            'password' => ['required', 'string', new StrongPassword()],
+            'password' => ['required', 'string', 'min:8', new StrongPassword()],
             'prodi_id' => 'required|exists:prodis,id',
             'jenis_kelamin' => 'required|in:L,P',
             'tempat_lahir' => 'nullable|string',
@@ -42,14 +45,20 @@ class MahasiswaController extends Controller
             'status' => 'required|in:aktif,nonaktif,lulus',
         ]);
 
-        $user = User::create([
-            'name' => $validated['nama'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'role' => 'mahasiswa',
-        ]);
+        // Gunakan DB transaction untuk memastikan data konsisten
+        DB::beginTransaction();
+        try {
+            $user = User::create([
+                'name' => $validated['nama'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+            ]);
+            
+            // Set role setelah create (karena role tidak di fillable untuk security)
+            $user->role = 'mahasiswa';
+            $user->save();
 
-        Mahasiswa::create([
+            $mahasiswa = Mahasiswa::create([
             'user_id' => $user->id,
             'nim' => $validated['nim'],
             'nama' => $validated['nama'],
@@ -59,12 +68,35 @@ class MahasiswaController extends Controller
             'tanggal_lahir' => $validated['tanggal_lahir'] ?? null,
             'alamat' => $validated['alamat'] ?? null,
             'no_hp' => $validated['no_hp'] ?? null,
-            'semester' => $validated['semester'],
-            'status' => $validated['status'],
-        ]);
+                'semester' => $validated['semester'],
+                'status' => $validated['status'],
+            ]);
 
-        return redirect()->route('admin.mahasiswa.index')
-            ->with('success', 'Mahasiswa berhasil ditambahkan.');
+            DB::commit();
+            
+            // Log audit
+            AuditLogService::logCreate(
+                $mahasiswa,
+                "Menambahkan mahasiswa baru: {$mahasiswa->nama} (NIM: {$mahasiswa->nim})"
+            );
+            
+            return redirect()->route('admin.mahasiswa.index')
+                ->with('success', 'Mahasiswa berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error creating mahasiswa: ' . $e->getMessage(), [
+                'email' => $validated['email'] ?? null,
+                'nim' => $validated['nim'] ?? null,
+                'exception' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return back()
+                ->withInput()
+                ->withErrors(['error' => 'Terjadi kesalahan saat menambahkan mahasiswa: ' . $e->getMessage()]);
+        }
     }
 
     public function edit(Mahasiswa $mahasiswa)
@@ -96,6 +128,8 @@ class MahasiswaController extends Controller
             'email' => $validated['email'],
         ]);
 
+        $oldValues = $mahasiswa->toArray();
+        
         if ($request->filled('password')) {
             $mahasiswa->user->update([
                 'password' => Hash::make($validated['password']),
@@ -115,14 +149,35 @@ class MahasiswaController extends Controller
             'status' => $validated['status'],
         ]);
 
+        // Log audit
+        AuditLogService::logUpdate(
+            $mahasiswa->fresh(),
+            $oldValues,
+            $mahasiswa->fresh()->toArray(),
+            "Mengubah data mahasiswa: {$mahasiswa->nama} (NIM: {$mahasiswa->nim})"
+        );
+
         return redirect()->route('admin.mahasiswa.index')
             ->with('success', 'Mahasiswa berhasil diperbarui.');
     }
 
     public function destroy(Mahasiswa $mahasiswa)
     {
+        $mahasiswaData = $mahasiswa->toArray();
+        $mahasiswaName = $mahasiswa->nama;
+        $mahasiswaNim = $mahasiswa->nim;
+        
         $mahasiswa->user->delete();
         $mahasiswa->delete();
+
+        // Log audit (use array since model is deleted)
+        AuditLogService::log(
+            'delete',
+            null,
+            $mahasiswaData,
+            null,
+            "Menghapus mahasiswa: {$mahasiswaName} (NIM: {$mahasiswaNim})"
+        );
 
         return redirect()->route('admin.mahasiswa.index')
             ->with('success', 'Mahasiswa berhasil dihapus.');

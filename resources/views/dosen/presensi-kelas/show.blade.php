@@ -145,7 +145,7 @@
 function copyCode() {
     const code = '{{ $classSession->kode_kelas }}';
     navigator.clipboard.writeText(code).then(() => {
-        alert('Kode kelas berhasil disalin!');
+        showAlert('Kode kelas berhasil disalin!', 'success');
     });
 }
 </script>

@@ -7,6 +7,8 @@ use App\Models\Dosen;
 use App\Models\JadwalKuliah;
 use App\Models\KRS;
 use App\Models\Nilai;
+use App\Services\AuditLogService;
+use App\Services\EmailNotificationService;
 use App\Services\NotifikasiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -102,6 +104,8 @@ class NilaiController extends Controller
             'nilai_uas.*' => 'nullable|numeric|min:0|max:100',
         ]);
 
+        $newNilaiIds = []; // Track which nilai are newly created
+
         foreach ($validated['krs_id'] as $index => $krs_id) {
             $krs = KRS::findOrFail($krs_id);
             
@@ -154,7 +158,11 @@ class NilaiController extends Controller
 
             $status = ($nilai_akhir !== null) ? 'selesai' : 'sedang';
 
-            Nilai::updateOrCreate(
+            $existingNilai = Nilai::where('krs_id', $krs_id)
+                ->where('jadwal_kuliah_id', $jadwal_id)
+                ->first();
+
+            $nilai = Nilai::updateOrCreate(
                 [
                     'krs_id' => $krs_id,
                     'mahasiswa_id' => $krs->mahasiswa_id,
@@ -171,11 +179,39 @@ class NilaiController extends Controller
                     'status' => $status,
                 ]
             );
+
+            // Track if this is a new nilai
+            if (!$existingNilai) {
+                $newNilaiIds[] = [
+                    'nilai_id' => $nilai->id,
+                    'krs_id' => $krs_id,
+                    'user_id' => $krs->mahasiswa->user_id,
+                ];
+            }
+
+            // Log audit
+            if ($existingNilai) {
+                // Update
+                AuditLogService::logUpdate(
+                    $nilai,
+                    $existingNilai->toArray(),
+                    $nilai->fresh()->toArray(),
+                    "Mengubah nilai untuk mahasiswa {$krs->mahasiswa->nama} - Mata kuliah: {$jadwal->mataKuliah->nama_mk}"
+                );
+            } else {
+                // Create
+                AuditLogService::logCreate(
+                    $nilai,
+                    "Membuat nilai baru untuk mahasiswa {$krs->mahasiswa->nama} - Mata kuliah: {$jadwal->mataKuliah->nama_mk}"
+                );
+            }
         }
 
-        // Buat notifikasi untuk mahasiswa yang nilainya diinput
+        // Buat notifikasi dan kirim email untuk mahasiswa yang nilainya diinput
         foreach ($validated['krs_id'] as $krs_id) {
             $krs = KRS::findOrFail($krs_id);
+            
+            // Buat notifikasi in-app
             NotifikasiService::create(
                 $krs->mahasiswa->user_id,
                 'Nilai Baru',
@@ -183,6 +219,14 @@ class NilaiController extends Controller
                 'info',
                 route('mahasiswa.khs.index')
             );
+        }
+
+        // Kirim email notification hanya untuk nilai baru
+        foreach ($newNilaiIds as $newNilai) {
+            $nilai = Nilai::with(['mahasiswa', 'jadwalKuliah.mataKuliah'])->find($newNilai['nilai_id']);
+            if ($nilai) {
+                EmailNotificationService::sendNilaiInputted($nilai, $newNilai['user_id']);
+            }
         }
 
         return redirect()->route('dosen.nilai.index', ['jadwal_id' => $jadwal_id])
@@ -262,6 +306,8 @@ class NilaiController extends Controller
 
         $status = ($nilai_akhir !== null) ? 'selesai' : 'sedang';
 
+        $oldValues = $nilai->toArray();
+
         $nilai->update([
             'nilai_tugas' => $validated['nilai_tugas'],
             'nilai_uts' => $validated['nilai_uts'],
@@ -272,6 +318,15 @@ class NilaiController extends Controller
             'status' => $status,
             'catatan' => $validated['catatan'] ?? null,
         ]);
+
+        // Log audit
+        $nilai->load(['mahasiswa', 'jadwalKuliah.mataKuliah']);
+        AuditLogService::logUpdate(
+            $nilai->fresh(),
+            $oldValues,
+            $nilai->fresh()->toArray(),
+            "Mengubah nilai untuk mahasiswa {$nilai->mahasiswa->nama} - Mata kuliah: {$nilai->jadwalKuliah->mataKuliah->nama_mk}"
+        );
 
         return redirect()->route('dosen.nilai.index', ['jadwal_id' => $nilai->jadwal_kuliah_id])
             ->with('success', 'Nilai berhasil diperbarui.');

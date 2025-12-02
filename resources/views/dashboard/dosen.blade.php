@@ -80,7 +80,7 @@
     @endif
 
     <!-- Pengumuman -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+    <div id="pengumuman" class="bg-white rounded-xl shadow-sm border border-gray-100">
         <div class="p-6 border-b border-gray-200">
             <h2 class="text-xl font-semibold text-gray-900">Pengumuman</h2>
         </div>

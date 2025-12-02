@@ -58,5 +58,15 @@ class JadwalKuliah extends Model
     {
         return $this->hasMany(Presensi::class);
     }
+
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(Assignment::class);
+    }
+
+    public function exams(): HasMany
+    {
+        return $this->hasMany(Exam::class);
+    }
 }
 

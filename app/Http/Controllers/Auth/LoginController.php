@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -33,6 +34,9 @@ class LoginController extends Controller
             // Ensure session is saved to database (for database driver)
             $request->session()->save();
             
+            // Log login activity
+            AuditLogService::logLogin($user->id, "User {$user->name} ({$user->role}) login ke sistem");
+            
             // Check if there's a QR token to process after login
             if (session('qr_token') && $user->role === 'mahasiswa') {
                 $qrToken = session('qr_token');
@@ -57,6 +61,13 @@ class LoginController extends Controller
 
     public function logout(Request $request)
     {
+        $user = Auth::user();
+        
+        // Log logout activity before logout
+        if ($user) {
+            AuditLogService::logLogout($user->id, "User {$user->name} ({$user->role}) logout dari sistem");
+        }
+        
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

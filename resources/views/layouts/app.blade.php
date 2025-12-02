@@ -4,7 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'SIAKAD') - Sistem Informasi Akademik</title>
+    @php
+        $appInfo = \App\Services\SystemSettingsService::getAppInfo();
+        $appName = $appInfo['name'] ?? 'SIAKAD';
+        $faviconUrl = \App\Services\SystemSettingsService::getFaviconUrl();
+    @endphp
+    <title>@yield('title', $appName) - Sistem Informasi Akademik</title>
+    @if($faviconUrl)
+        <link rel="icon" type="image/png" href="{{ $faviconUrl }}">
+        <link rel="shortcut icon" type="image/png" href="{{ $faviconUrl }}">
+    @endif
     <script>
         // Nonaktifkan scroll restoration browser SEBELUM halaman dimuat
         if ('scrollRestoration' in history) {
@@ -18,16 +27,26 @@
     <div class="min-h-screen flex flex-col">
         <!-- Navigation -->
         <nav class="bg-white border-b border-gray-200 shadow-sm">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="px-6">
                 <div class="flex justify-between h-16">
                     <div class="flex items-center">
                         <a href="{{ route('dashboard') }}" class="flex items-center space-x-3">
-                            <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                                </svg>
-                            </div>
-                            <span class="text-xl font-bold text-gray-900">SIAKAD</span>
+                            @php
+                                $appInfoBody = \App\Services\SystemSettingsService::getAppInfo();
+                                $appNameBody = $appInfoBody['name'] ?? 'SIAKAD';
+                                $logoUrl = \App\Services\SystemSettingsService::getLogoUrl();
+                            @endphp
+                            
+                            @if($logoUrl)
+                                <img src="{{ $logoUrl }}" alt="{{ $appNameBody }}" class="h-10 w-auto object-contain">
+                            @else
+                                <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                    </svg>
+                                </div>
+                            @endif
+                            <span class="text-xl font-bold text-gray-900">{{ $appNameBody }}</span>
                         </a>
                     </div>
                     
@@ -327,24 +346,17 @@
         })();
     </script>
     
-    <!-- Confirmation Modal -->
-    <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="display: none; z-index: 99999; position: fixed;">
+    <!-- Universal Modal (Confirm, Alert, Info, Error) -->
+    <div id="universalModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="display: none; z-index: 99999; position: fixed;">
         <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 transform transition-all relative" style="z-index: 100000;" onclick="event.stopPropagation()">
             <div class="p-6">
-                <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full">
-                    <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                    </svg>
+                <div id="modalIcon" class="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full">
+                    <!-- Icon akan diisi oleh JavaScript -->
                 </div>
-                <h3 class="text-lg font-semibold text-gray-900 text-center mb-2" id="confirmTitle">Konfirmasi Hapus</h3>
-                <p class="text-sm text-gray-600 text-center mb-6" id="confirmMessage">Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.</p>
-                <div class="flex space-x-3">
-                    <button type="button" onclick="closeConfirmModal()" class="flex-1 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors font-medium" style="background-color: #e5e7eb !important; color: #374151 !important; border: none !important; cursor: pointer;">
-                        Batal
-                    </button>
-                    <button type="button" id="confirmButton" onclick="executeConfirm()" class="flex-1 px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium" style="background-color: #dc2626 !important; color: #ffffff !important; border: none !important; cursor: pointer;">
-                        Ya, Lanjutkan
-                    </button>
+                <h3 class="text-lg font-semibold text-gray-900 text-center mb-2" id="modalTitle">Title</h3>
+                <p class="text-sm text-gray-600 text-center mb-6" id="modalMessage">Message</p>
+                <div id="modalButtons" class="flex space-x-3">
+                    <!-- Buttons akan diisi oleh JavaScript -->
                 </div>
             </div>
         </div>
@@ -352,62 +364,170 @@
 
     <script>
         (function() {
+            let confirmCallback = null;
             let confirmForm = null;
 
-            function showConfirmModal(title, message, form) {
-                const titleEl = document.getElementById('confirmTitle');
-                const messageEl = document.getElementById('confirmMessage');
-                const modal = document.getElementById('confirmModal');
+            // Icon configurations
+            const iconConfigs = {
+                confirm: {
+                    bg: 'bg-yellow-100',
+                    icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
+                    color: 'text-yellow-600'
+                },
+                alert: {
+                    bg: 'bg-blue-100',
+                    icon: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+                    color: 'text-blue-600'
+                },
+                error: {
+                    bg: 'bg-red-100',
+                    icon: 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+                    color: 'text-red-600'
+                },
+                warning: {
+                    bg: 'bg-orange-100',
+                    icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
+                    color: 'text-orange-600'
+                },
+                info: {
+                    bg: 'bg-blue-100',
+                    icon: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+                    color: 'text-blue-600'
+                },
+                success: {
+                    bg: 'bg-green-100',
+                    icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+                    color: 'text-green-600'
+                }
+            };
+
+            function showUniversalModal(type, title, message, options = {}) {
+                const modal = document.getElementById('universalModal');
+                const iconEl = document.getElementById('modalIcon');
+                const titleEl = document.getElementById('modalTitle');
+                const messageEl = document.getElementById('modalMessage');
+                const buttonsEl = document.getElementById('modalButtons');
                 
                 if (!modal) {
                     console.error('Modal not found!');
                     return false;
                 }
+
+                // Set icon
+                const config = iconConfigs[type] || iconConfigs.alert;
+                iconEl.className = `flex items-center justify-center w-16 h-16 mx-auto mb-4 ${config.bg} rounded-full`;
+                iconEl.innerHTML = `<svg class="w-8 h-8 ${config.color}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${config.icon}"></path>
+                </svg>`;
+
+                // Set title and message
+                if (titleEl) titleEl.textContent = title || 'Notifikasi';
+                if (messageEl) messageEl.textContent = message || '';
+
+                // Store callbacks and form before clearing buttons
+                const callback = options.callback || null;
+                const cancelCallback = options.cancelCallback || null;
+                confirmForm = options.form || null;
+
+                // Set buttons based on type
+                buttonsEl.innerHTML = '';
                 
-                if (titleEl) titleEl.textContent = title || 'Konfirmasi Hapus';
-                if (messageEl) messageEl.textContent = message || 'Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.';
+                if (type === 'confirm') {
+                    // Confirm modal: Batal and Ya button
+                    const cancelBtn = document.createElement('button');
+                    cancelBtn.type = 'button';
+                    cancelBtn.className = 'flex-1 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors font-medium';
+                    cancelBtn.style.cssText = 'background-color: #e5e7eb !important; color: #374151 !important; border: none !important; cursor: pointer;';
+                    cancelBtn.textContent = options.cancelText || 'Batal';
+                    cancelBtn.onclick = function() {
+                        if (cancelCallback) cancelCallback();
+                        closeUniversalModal();
+                    };
+                    
+                    const confirmBtn = document.createElement('button');
+                    confirmBtn.type = 'button';
+                    confirmBtn.className = 'flex-1 px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium';
+                    confirmBtn.style.cssText = 'background-color: #2563eb !important; color: #ffffff !important; border: none !important; cursor: pointer;';
+                    confirmBtn.textContent = options.confirmText || 'Ya, Lanjutkan';
+                    confirmBtn.onclick = function() {
+                        if (callback) callback();
+                        if (confirmForm) confirmForm.submit();
+                        closeUniversalModal();
+                    };
+                    
+                    buttonsEl.appendChild(cancelBtn);
+                    buttonsEl.appendChild(confirmBtn);
+                    confirmCallback = callback;
+                } else {
+                    // Alert modal: single OK button
+                    const okBtn = document.createElement('button');
+                    okBtn.type = 'button';
+                    okBtn.className = 'w-full px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium';
+                    okBtn.style.cssText = 'background-color: #2563eb !important; color: #ffffff !important; border: none !important; cursor: pointer;';
+                    okBtn.textContent = options.okText || 'OK';
+                    okBtn.onclick = function() {
+                        if (callback) callback();
+                        closeUniversalModal();
+                    };
+                    buttonsEl.appendChild(okBtn);
+                    confirmCallback = null;
+                }
                 
-                confirmForm = form;
-                
+                // Show modal
                 modal.style.display = 'flex';
                 modal.style.zIndex = '99999';
                 modal.style.position = 'fixed';
                 document.body.style.overflow = 'hidden';
                 
-                console.log('Modal should be visible now');
                 return true;
             }
 
-            function closeConfirmModal() {
-                const modal = document.getElementById('confirmModal');
+            function closeUniversalModal() {
+                const modal = document.getElementById('universalModal');
                 if (modal) {
                     modal.style.display = 'none';
                 }
                 document.body.style.overflow = '';
+                confirmCallback = null;
                 confirmForm = null;
             }
 
-            function executeConfirm() {
-                if (confirmForm) {
-                    confirmForm.submit();
-                }
-                closeConfirmModal();
+            // Make functions global
+            window.showUniversalModal = showUniversalModal;
+            window.closeUniversalModal = closeUniversalModal;
+
+            // Backward compatibility
+            function showConfirmModal(title, message, form) {
+                return showUniversalModal('confirm', title, message, { form: form });
             }
 
-            // Make functions global
             window.showConfirmModal = showConfirmModal;
-            window.closeConfirmModal = closeConfirmModal;
-            window.executeConfirm = executeConfirm;
-            window.confirmForm = function() { return confirmForm; };
+
+            // Custom alert function (non-blocking)
+            window.showAlert = function(message, type = 'alert') {
+                showUniversalModal(type, 'Notifikasi', message);
+            };
+
+            // Custom confirm function (callback-based)
+            window.showConfirm = function(title, message, onConfirm, onCancel) {
+                showUniversalModal('confirm', title || 'Konfirmasi', message, {
+                    callback: onConfirm || function() {},
+                    cancelCallback: onCancel || function() {}
+                });
+            };
+
+            // Store original functions
+            window._nativeAlert = window.alert;
+            window._nativeConfirm = window.confirm;
         })();
 
-        // Close modal when clicking outside - wait for modal to exist
+        // Close modal when clicking outside
         setTimeout(function() {
-            const modal = document.getElementById('confirmModal');
+            const modal = document.getElementById('universalModal');
             if (modal) {
                 modal.addEventListener('click', function(e) {
                     if (e.target === this) {
-                        closeConfirmModal();
+                        closeUniversalModal();
                     }
                 });
             }
@@ -416,7 +536,7 @@
         // Close modal with Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                closeConfirmModal();
+                closeUniversalModal();
             }
         });
 

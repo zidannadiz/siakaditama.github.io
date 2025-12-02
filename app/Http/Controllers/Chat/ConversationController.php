@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 
 class ConversationController extends Controller
@@ -39,14 +40,31 @@ class ConversationController extends Controller
         }
 
         // Mark messages as delivered and read
-        $conversation->messages()
+        $unreadMessages = $conversation->messages()
             ->where('sender_id', '!=', auth()->id())
             ->where('status', '!=', 'read')
-            ->update([
-                'status' => 'read',
-                'is_read' => true,
-                'read_at' => now(),
-            ]);
+            ->get();
+            
+        $unreadCount = $unreadMessages->count();
+        
+        if ($unreadCount > 0) {
+            $conversation->messages()
+                ->where('sender_id', '!=', auth()->id())
+                ->where('status', '!=', 'read')
+                ->update([
+                    'status' => 'read',
+                    'is_read' => true,
+                    'read_at' => now(),
+                ]);
+            
+            // Log audit - Read messages
+            $otherUser = $conversation->other_user;
+            AuditLogService::logCustom(
+                'chat_read',
+                $conversation,
+                "Membaca {$unreadCount} pesan dari {$otherUser->name} ({$otherUser->email})"
+            );
+        }
 
         $messages = $conversation->messages()->with('sender')->get();
         $otherUser = $conversation->other_user;
@@ -72,11 +90,23 @@ class ConversationController extends Controller
                   ->where('user2_id', auth()->id());
         })->first();
 
+        $isNewConversation = false;
+        $receiver = User::find($receiverId);
+        
         if (!$conversation) {
             $conversation = Conversation::create([
                 'user1_id' => auth()->id(),
                 'user2_id' => $receiverId,
             ]);
+            $isNewConversation = true;
+            
+            // Log audit - Create conversation
+            if ($receiver) {
+                AuditLogService::logCreate(
+                    $conversation,
+                    "Membuat percakapan baru dengan {$receiver->name} ({$receiver->email})"
+                );
+            }
         }
 
         // Create message with status 'sent' and is_read = false
@@ -92,6 +122,19 @@ class ConversationController extends Controller
 
         // Update conversation last message time
         $conversation->update(['last_message_at' => now()]);
+
+        // Log audit - Send message
+        if ($receiver) {
+            $messagePreview = strlen($request->message) > 50 
+                ? substr($request->message, 0, 50) . '...' 
+                : $request->message;
+            
+            AuditLogService::logCustom(
+                'chat_send',
+                $message,
+                "Mengirim pesan chat ke {$receiver->name} ({$receiver->email}): \"{$messagePreview}\""
+            );
+        }
 
         return redirect()->route('chat.show', $conversation)
             ->with('success', 'Pesan terkirim');
@@ -118,6 +161,18 @@ class ConversationController extends Controller
         $message->update(['status' => 'delivered']);
 
         $conversation->update(['last_message_at' => now()]);
+
+        // Log audit - Send message
+        $otherUser = $conversation->other_user;
+        $messagePreview = strlen($request->message) > 50 
+            ? substr($request->message, 0, 50) . '...' 
+            : $request->message;
+        
+        AuditLogService::logCustom(
+            'chat_send',
+            $message,
+            "Mengirim pesan chat ke {$otherUser->name} ({$otherUser->email}): \"{$messagePreview}\""
+        );
 
         return back()->with('success', 'Pesan terkirim');
     }

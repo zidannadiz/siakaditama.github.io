@@ -41,6 +41,7 @@
                     <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password *</label>
                     <input type="password" id="password" name="password" required
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="text-xs text-gray-500 mt-1">Minimal 8 karakter, harus mengandung huruf besar, huruf kecil, dan angka</p>
                     @error('password') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
                 </div>
 
@@ -111,6 +112,12 @@
                 <textarea id="alamat" name="alamat" rows="3"
                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">{{ old('alamat') }}</textarea>
             </div>
+
+            @if($errors->has('error'))
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p class="text-red-800 text-sm">{{ $errors->first('error') }}</p>
+                </div>
+            @endif
 
             <div class="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
                 <a href="{{ route('admin.mahasiswa.index') }}" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
