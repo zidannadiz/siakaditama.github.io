@@ -236,7 +236,18 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/exam/{exam}/results', [\App\Http\Controllers\Dosen\ExamController::class, 'results'])->name('exam.results');
         Route::get('/exam/{exam}/grade/{session}', [\App\Http\Controllers\Dosen\ExamController::class, 'showGradeSession'])->name('exam.grade-session');
         Route::post('/exam/{exam}/grade/{session}', [\App\Http\Controllers\Dosen\ExamController::class, 'gradeSession'])->name('exam.grade-session.store');
-        Route::post('/exam/{exam}/grade/{session}', [\App\Http\Controllers\Dosen\ExamController::class, 'gradeSession'])->name('exam.grade-session.store');
+        
+        // Violation Rules & Detection
+        Route::get('/exam/{exam}/violation-rules', [\App\Http\Controllers\Dosen\ExamController::class, 'showViolationRules'])->name('exam.violation-rules');
+        Route::put('/exam/{exam}/violation-rules', [\App\Http\Controllers\Dosen\ExamController::class, 'updateViolationRules'])->name('exam.violation-rules.update');
+        Route::get('/exam/{exam}/violations', [\App\Http\Controllers\Dosen\ExamController::class, 'violations'])->name('exam.violations');
+        Route::get('/exam/{exam}/violations/{session}', [\App\Http\Controllers\Dosen\ExamController::class, 'showViolationDetail'])->name('exam.violation-detail');
+        Route::get('/exam-violations', [\App\Http\Controllers\Dosen\ExamController::class, 'allViolations'])->name('exam.all-violations');
+        
+        // Ongoing and Finished Exams
+        Route::get('/exam-ongoing', [\App\Http\Controllers\Dosen\ExamController::class, 'ongoing'])->name('exam.ongoing');
+        Route::get('/exam-finished', [\App\Http\Controllers\Dosen\ExamController::class, 'finished'])->name('exam.finished');
+        Route::get('/exam/{exam}/active-students', [\App\Http\Controllers\Dosen\ExamController::class, 'activeStudents'])->name('exam.active-students');
     });
 
     // Mahasiswa routes

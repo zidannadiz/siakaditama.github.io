@@ -95,9 +95,11 @@
             } elseif ($role === 'dosen') {
                 $dosen = \App\Models\Dosen::where('user_id', auth()->id())->first();
                 if ($dosen) {
-                    // Assignment notifications: submissions yang belum dinilai
+                    // Assignment notifications: submissions yang belum dinilai dan tugas masih relevan
+                    // Hanya hitung tugas yang deadline-nya belum terlalu lama (maksimal 30 hari setelah deadline)
                     $ungradedSubmissions = \App\Models\AssignmentSubmission::whereHas('assignment', function($query) use ($dosen) {
-                            $query->where('dosen_id', $dosen->id);
+                            $query->where('dosen_id', $dosen->id)
+                                  ->where('deadline', '>=', now()->subDays(30)); // Tugas yang deadline-nya tidak lebih dari 30 hari yang lalu
                         })
                         ->whereNotNull('submitted_at')
                         ->whereNull('nilai')
@@ -105,8 +107,13 @@
                     
                     $assignmentNotificationCount = $ungradedSubmissions;
                     
-                    // Exam notifications: jawaban essay yang belum dinilai
-                    $ungradedEssays = \App\Models\ExamAnswer::whereHas('examSession.exam', function($query) use ($dosen) {
+                    // Exam notifications: jawaban essay yang belum dinilai dan session sudah selesai
+                    // Hanya hitung untuk session yang sudah submitted/finished, bukan yang masih ongoing
+                    $ungradedEssays = \App\Models\ExamAnswer::whereHas('examSession', function($query) {
+                            $query->whereIn('status', ['submitted', 'auto_submitted', 'terminated'])
+                                  ->whereNotNull('finished_at'); // Hanya session yang sudah selesai
+                        })
+                        ->whereHas('examSession.exam', function($query) use ($dosen) {
                             $query->where('dosen_id', $dosen->id);
                         })
                         ->whereHas('examQuestion', function($query) {
@@ -375,7 +382,7 @@
                 @endif
             </a>
             
-            <a href="{{ route('dosen.exam.index') }}" class="flex items-center justify-between px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'dosen.exam') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+            <a href="{{ route('dosen.exam.index') }}" class="flex items-center justify-between px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'dosen.exam') && !str_contains($currentRoute, 'dosen.exam-violations') && !str_contains($currentRoute, 'dosen.exam.ongoing') && !str_contains($currentRoute, 'dosen.exam.finished') && !str_contains($currentRoute, 'dosen.exam.active-students') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
                 <div class="flex items-center space-x-3">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
@@ -385,6 +392,27 @@
                 @if($examNotificationCount > 0)
                     <span class="rounded-full flex-shrink-0" style="width: 10px; height: 10px; background-color: #ff0000 !important; border: 2px solid white; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.3);"></span>
                 @endif
+            </a>
+            
+            <a href="{{ route('dosen.exam.ongoing') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_contains($currentRoute, 'dosen.exam.ongoing') || str_contains($currentRoute, 'dosen.exam.active-students') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>Ujian Berlangsung</span>
+            </a>
+            
+            <a href="{{ route('dosen.exam.finished') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_contains($currentRoute, 'dosen.exam.finished') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>Ujian Selesai</span>
+            </a>
+            
+            <a href="{{ route('dosen.exam.all-violations') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ $currentRoute === 'dosen.exam.all-violations' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+                <span>Pelanggaran Ujian</span>
             </a>
             
             <a href="{{ route('dosen.kalender-akademik.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'dosen.kalender-akademik') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">

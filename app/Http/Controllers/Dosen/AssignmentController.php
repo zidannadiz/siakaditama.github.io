@@ -193,9 +193,29 @@ class AssignmentController extends Controller
             'feedback' => 'nullable|string',
         ]);
 
-        $submission = $assignment->submissions()->findOrFail($submission_id);
-        $submission->update($validated);
+        try {
+            $submission = $assignment->submissions()->findOrFail($submission_id);
+            
+            // Update nilai dan feedback
+            $submission->nilai = $validated['nilai'];
+            $submission->feedback = $validated['feedback'] ?? null;
+            $submission->save();
+            
+            \Log::info('Nilai berhasil disimpan', [
+                'submission_id' => $submission->id,
+                'nilai' => $submission->nilai,
+                'assignment_id' => $assignment->id,
+            ]);
 
-        return back()->with('success', 'Nilai berhasil disimpan');
+            return back()->with('success', 'Nilai berhasil disimpan');
+        } catch (\Exception $e) {
+            \Log::error('Error saving grade: ' . $e->getMessage(), [
+                'submission_id' => $submission_id,
+                'assignment_id' => $assignment->id,
+                'validated' => $validated,
+            ]);
+            
+            return back()->with('error', 'Gagal menyimpan nilai: ' . $e->getMessage());
+        }
     }
 }

@@ -180,7 +180,8 @@
 function gradeSubmission(submissionId, studentName, currentNilai) {
     document.getElementById('studentName').textContent = studentName;
     document.getElementById('nilai').value = currentNilai || '';
-    document.getElementById('gradeForm').action = '{{ route("dosen.assignment.index", ["jadwal_id" => $assignment->jadwal_kuliah_id]) }}/{{ $assignment->id }}/grade-submission/' + submissionId;
+    // Build the correct route URL using the assignment ID and submission ID
+    document.getElementById('gradeForm').action = '{{ url("/dosen/assignment") }}/{{ $assignment->id }}/grade-submission/' + submissionId;
     document.getElementById('gradeModal').classList.remove('hidden');
     document.getElementById('gradeModal').classList.add('flex');
 }

@@ -18,6 +18,24 @@
                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer">
                 Hasil Ujian
             </a>
+            <a href="{{ route('dosen.exam.violation-rules', $exam) }}" 
+               class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors cursor-pointer">
+                Kriteria Pelanggaran
+            </a>
+            <a href="{{ route('dosen.exam.violations', $exam) }}" 
+               class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer">
+                Daftar Pelanggaran
+            </a>
+            @php
+                $isOngoing = $exam->isOngoing();
+                $activeCount = $exam->sessions->where('status', 'started')->whereNull('finished_at')->count();
+            @endphp
+            @if($isOngoing && $activeCount > 0)
+            <a href="{{ route('dosen.exam.active-students', $exam) }}" 
+               class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer">
+                Mahasiswa Aktif ({{ $activeCount }})
+            </a>
+            @endif
             <a href="{{ route('dosen.exam.index', ['jadwal_id' => $exam->jadwal_kuliah_id]) }}" 
                class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
                 Kembali
@@ -489,6 +507,18 @@
                         <p class="text-2xl font-bold text-blue-600">{{ $exam->sessions->where('status', 'started')->count() }}</p>
                     </div>
                 </div>
+                @php
+                    $activeCount = $exam->sessions->where('status', 'started')->whereNull('finished_at')->count();
+                    $isOngoing = $exam->isOngoing();
+                @endphp
+                @if($isOngoing && $activeCount > 0)
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <a href="{{ route('dosen.exam.active-students', $exam) }}" 
+                       class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-center text-sm font-medium block cursor-pointer">
+                        Lihat Mahasiswa yang Sedang Mengerjakan ({{ $activeCount }})
+                    </a>
+                </div>
+                @endif
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">

@@ -259,6 +259,12 @@
         let isFullscreen = false;
         let autoSaveInterval;
         let timerInterval;
+        
+        // Violation Rules (from server)
+        const violationRules = @json($exam->violationRule ?? \App\Models\ExamViolationRule::getDefaults());
+        const warningMessage = violationRules.warning_message || 'Anda telah melakukan pelanggaran. Mohon untuk tidak melakukan hal yang sama lagi.';
+        const terminationMessage = violationRules.termination_message || 'Ujian dihentikan karena Anda telah melakukan pelanggaran berulang kali.';
+        const maxViolations = violationRules.max_violations_before_termination || 3;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
@@ -285,11 +291,17 @@
                     );
                 });
             }
+            
+            isFullscreen = !!document.fullscreenElement;
 
             // Detect fullscreen exit
             document.addEventListener('fullscreenchange', function() {
-                if (!document.fullscreenElement && isFullscreen) {
-                    logViolation('fullscreen_exit');
+                const isCurrentlyFullscreen = !!document.fullscreenElement;
+                if (!isCurrentlyFullscreen && isFullscreen) {
+                    // Only log if detection is enabled
+                    if (violationRules.enable_fullscreen_exit_detection !== false) {
+                        logViolation('fullscreen_exit');
+                    }
                     showConfirm(
                         'Peringatan Pelanggaran',
                         'Jangan keluar dari mode fullscreen!\n\nMode fullscreen wajib diaktifkan selama ujian. Pelanggaran telah dicatat.',
@@ -299,6 +311,7 @@
                         }
                     );
                 }
+                isFullscreen = isCurrentlyFullscreen;
             });
             @endif
         }
@@ -349,43 +362,46 @@
         // Prevent Copy/Paste
         @if($exam->prevent_copy_paste)
         function initializeEventListeners() {
-            // Disable copy
-            document.addEventListener('copy', function(e) {
-                e.preventDefault();
-                logViolation('copy_paste');
-                // Modal will be shown by logViolation function
-            });
+            // Only enable if copy-paste detection is enabled in rules
+            if (violationRules.enable_copy_paste_detection !== false) {
+                // Disable copy
+                document.addEventListener('copy', function(e) {
+                    e.preventDefault();
+                    logViolation('copy_paste');
+                    // Modal will be shown by logViolation function
+                });
 
-            // Disable cut
-            document.addEventListener('cut', function(e) {
-                e.preventDefault();
-                logViolation('copy_paste');
-            });
+                // Disable cut
+                document.addEventListener('cut', function(e) {
+                    e.preventDefault();
+                    logViolation('copy_paste');
+                });
 
-            // Disable paste
-            document.addEventListener('paste', function(e) {
-                e.preventDefault();
-                logViolation('copy_paste');
-            });
+                // Disable paste
+                document.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    logViolation('copy_paste');
+                });
 
-            // Disable right-click context menu
+                // Disable keyboard shortcuts
+                document.addEventListener('keydown', function(e) {
+                    // Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+A
+                    if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 'a')) {
+                        e.preventDefault();
+                        logViolation('copy_paste');
+                    }
+
+                    // F12 (Developer Tools)
+                    if (e.key === 'F12') {
+                        e.preventDefault();
+                        logViolation('copy_paste');
+                    }
+                });
+            }
+            
+            // Always disable right-click context menu and text selection
             document.addEventListener('contextmenu', function(e) {
                 e.preventDefault();
-            });
-
-            // Disable keyboard shortcuts
-            document.addEventListener('keydown', function(e) {
-                // Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+A
-                if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 'a')) {
-                    e.preventDefault();
-                    logViolation('copy_paste');
-                }
-
-                // F12 (Developer Tools)
-                if (e.key === 'F12') {
-                    e.preventDefault();
-                    logViolation('copy_paste');
-                }
             });
 
             // Disable text selection on question text
@@ -400,8 +416,10 @@
         let hasShownTabWarning = false;
         document.addEventListener('visibilitychange', function() {
             if (document.hidden && timeRemaining > 0) {
-                logViolation('tab_switch');
-                // Don't show inline banner, only show modal
+                // Only log if tab switch detection is enabled
+                if (violationRules.enable_tab_switch_detection !== false) {
+                    logViolation('tab_switch');
+                }
                 
                 if (!hasShownTabWarning) {
                     hasShownTabWarning = true;
@@ -416,7 +434,10 @@
         let hasShownBlurWarning = false;
         window.addEventListener('blur', function() {
             if (timeRemaining > 0) {
-                logViolation('window_blur');
+                // Only log if window blur detection is enabled
+                if (violationRules.enable_window_blur_detection !== false) {
+                    logViolation('window_blur');
+                }
                 
                 if (!hasShownBlurWarning) {
                     hasShownBlurWarning = true;
@@ -506,9 +527,29 @@
         }
 
         // Log Violation
-        const MAX_VIOLATIONS = 3;
         let lastViolationModalTime = 0;
         function logViolation(type) {
+            // Check if this violation type is enabled
+            let isEnabled = false;
+            switch(type) {
+                case 'tab_switch':
+                    isEnabled = violationRules.enable_tab_switch_detection !== false;
+                    break;
+                case 'copy_paste':
+                    isEnabled = violationRules.enable_copy_paste_detection !== false;
+                    break;
+                case 'window_blur':
+                    isEnabled = violationRules.enable_window_blur_detection !== false;
+                    break;
+                case 'fullscreen_exit':
+                    isEnabled = violationRules.enable_fullscreen_exit_detection !== false;
+                    break;
+            }
+            
+            if (!isEnabled) {
+                return; // Don't log if detection is disabled
+            }
+            
             violationCount++;
             
             fetch(`/mahasiswa/exam/${examId}/log-violation`, {
@@ -527,11 +568,22 @@
                     clearInterval(timerInterval);
                     clearInterval(autoSaveInterval);
                     
+                    // Jika redirect_to_dashboard true, langsung redirect ke dashboard tanpa modal
+                    if (data.redirect_to_dashboard) {
+                        // Stop semua interval
+                        if (timerInterval) clearInterval(timerInterval);
+                        if (autoSaveInterval) clearInterval(autoSaveInterval);
+                        
+                        // Redirect langsung ke dashboard tanpa konfirmasi (gunakan replace agar tidak bisa kembali)
+                        window.location.replace(data.redirect_url || '/mahasiswa/dashboard');
+                        return;
+                    }
+                    
                     if (data.must_restart) {
                         // Session deleted, must restart from beginning
                         showConfirm(
                             'Ujian Dihentikan',
-                            `Anda telah melakukan ${MAX_VIOLATIONS} kali pelanggaran!\n\nUjian Anda telah dihentikan dan session telah dihapus. Anda harus mengulang ujian dari awal.\n\nAnda akan diarahkan kembali ke halaman daftar ujian.`,
+                            `${terminationMessage}\n\nUjian Anda telah dihentikan dan session telah dihapus. Anda harus mengulang ujian dari awal.\n\nAnda akan diarahkan kembali ke halaman daftar ujian.`,
                             function() {
                                 window.location.href = `/mahasiswa/exam`;
                             }
@@ -539,16 +591,16 @@
                     } else {
                         showConfirm(
                             'Ujian Dihentikan',
-                            'Ujian Anda telah dihentikan karena terlalu banyak pelanggaran! Anda akan diarahkan ke halaman hasil ujian.',
+                            `${terminationMessage}\n\nAnda akan diarahkan ke halaman hasil ujian.`,
                             function() {
                                 window.location.href = `/mahasiswa/exam/${examId}/result/${sessionId}`;
                             }
                         );
                     }
-                } else {
+                } else if (data.success !== false) {
                     // Update violation count from server response
                     const totalViolations = data.total_violations || violationCount;
-                    const remaining = data.remaining || (MAX_VIOLATIONS - totalViolations);
+                    const remaining = data.remaining !== undefined ? data.remaining : (maxViolations - totalViolations);
                     
                     // Update violation count in hidden element (for tracking only)
                     const violationCountEl = document.getElementById('violation-count');
@@ -561,12 +613,20 @@
                     if (now - lastViolationModalTime > 2000) { // Show modal max once every 2 seconds
                         lastViolationModalTime = now;
                         
-                        let message = `Pelanggaran telah dicatat dalam sistem!\n\nTotal pelanggaran: ${totalViolations} dari ${MAX_VIOLATIONS} maksimal.`;
+                        let message = `${warningMessage}\n\nTotal pelanggaran: ${totalViolations} dari ${maxViolations} maksimal.`;
+                        
+                        // Add type-specific information
+                        if (data.tab_switch_count !== undefined) {
+                            message += `\n\nTab Switch: ${data.tab_switch_count} kali`;
+                        }
+                        if (data.copy_paste_count !== undefined) {
+                            message += `\nCopy-Paste: ${data.copy_paste_count} kali`;
+                        }
                         
                         if (remaining > 0) {
                             message += `\n\nSisa kesempatan: ${remaining} kali.`;
                             if (remaining === 1) {
-                                message += `\n\nPERINGATAN: Jika Anda melakukan pelanggaran sekali lagi, ujian akan dihentikan dan Anda harus mengulang dari awal!`;
+                                message += `\n\nPERINGATAN: Jika Anda melakukan pelanggaran sekali lagi, ujian akan dihentikan!`;
                             }
                         } else {
                             message += `\n\nPERINGATAN: Anda telah mencapai batas maksimal pelanggaran!`;

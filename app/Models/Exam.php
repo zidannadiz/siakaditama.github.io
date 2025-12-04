@@ -65,6 +65,11 @@ class Exam extends Model
         return $this->hasMany(ExamSession::class);
     }
 
+    public function violationRule(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(ExamViolationRule::class);
+    }
+
     public function isPublished(): bool
     {
         return $this->status === 'published';

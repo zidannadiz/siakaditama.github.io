@@ -78,10 +78,10 @@
             </div>
 
             <div class="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
-                <a href="{{ route('dosen.nilai.index', ['jadwal_id' => $nilai->jadwal_kuliah_id]) }}" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                <a href="{{ route('dosen.nilai.index', ['jadwal_id' => $nilai->jadwal_kuliah_id]) }}" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
                     Batal
                 </a>
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                <button type="submit" style="cursor: pointer;" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium cursor-pointer">
                     Simpan Perubahan
                 </button>
             </div>

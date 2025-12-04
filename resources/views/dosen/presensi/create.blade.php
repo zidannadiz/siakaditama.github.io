@@ -64,10 +64,10 @@
         </div>
 
         <div class="mt-6 flex justify-end space-x-3">
-            <a href="{{ route('dosen.presensi.index') }}" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+            <a href="{{ route('dosen.presensi.index') }}" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
                 Batal
             </a>
-            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <button type="submit" style="cursor: pointer;" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer">
                 Simpan Presensi
             </button>
         </div>

@@ -8,6 +8,7 @@ use App\Models\Exam;
 use App\Models\ExamQuestion;
 use App\Models\ExamSession;
 use App\Models\ExamAnswer;
+use App\Models\ExamViolationRule;
 use App\Models\JadwalKuliah;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -118,6 +119,12 @@ class ExamController extends Controller
             $validated['fullscreen_mode'] = $request->has('fullscreen_mode');
 
             $exam = Exam::create($validated);
+
+            // Create default violation rules
+            ExamViolationRule::create([
+                'exam_id' => $exam->id,
+                ...ExamViolationRule::getDefaults(),
+            ]);
 
             return redirect()->route('dosen.exam.show', $exam)
                 ->with('success', 'Ujian berhasil dibuat. Silakan tambahkan soal.');
@@ -611,31 +618,296 @@ class ExamController extends Controller
             'answers.*.feedback' => 'nullable|string',
         ]);
 
-        foreach ($validated['answers'] as $answerId => $data) {
-            $answer = $session->answers()->find($answerId);
-            if ($answer && $answer->examQuestion->isEssay()) {
-                $answer->update([
-                    'nilai' => $data['nilai'],
-                    'feedback' => $data['feedback'] ?? null,
-                ]);
+        try {
+            // Update essay answers
+            foreach ($validated['answers'] as $answerId => $data) {
+                $answer = $session->answers()->find($answerId);
+                if ($answer && $answer->examQuestion->isEssay()) {
+                    $answer->nilai = $data['nilai'];
+                    $answer->feedback = $data['feedback'] ?? null;
+                    $answer->save();
+                }
             }
+
+            // Refresh session with updated answers
+            $session->refresh();
+            $session->load('answers.examQuestion');
+
+            // Calculate total score
+            $totalScore = 0;
+            $totalBobot = 0;
+            
+            foreach ($session->answers as $answer) {
+                if ($answer->nilai !== null) {
+                    $totalScore += $answer->nilai * ($answer->examQuestion->bobot ?? 1);
+                    $totalBobot += $answer->examQuestion->bobot ?? 1;
+                }
+            }
+
+            $finalScore = $totalBobot > 0 ? ($totalScore / $totalBobot) * 100 : 0;
+            
+            $session->nilai = $finalScore;
+            $session->save();
+
+            \Log::info('Nilai ujian berhasil disimpan', [
+                'session_id' => $session->id,
+                'exam_id' => $exam->id,
+                'final_score' => $finalScore,
+                'mahasiswa_id' => $session->mahasiswa_id,
+            ]);
+
+            return back()->with('success', 'Nilai berhasil disimpan');
+        } catch (\Exception $e) {
+            \Log::error('Error saving exam grade: ' . $e->getMessage(), [
+                'session_id' => $session->id,
+                'exam_id' => $exam->id,
+                'validated' => $validated,
+            ]);
+            
+            return back()->with('error', 'Gagal menyimpan nilai: ' . $e->getMessage());
+        }
+    }
+
+    // Show violation rules configuration page
+    public function showViolationRules(Exam $exam)
+    {
+        $dosen = Dosen::where('user_id', Auth::id())->firstOrFail();
+
+        if ($exam->dosen_id !== $dosen->id) {
+            abort(403);
         }
 
-        // Calculate total score
-        $totalScore = 0;
-        $totalBobot = 0;
-        
-        foreach ($session->answers as $answer) {
-            if ($answer->nilai !== null) {
-                $totalScore += $answer->nilai * ($answer->examQuestion->bobot ?? 1);
-                $totalBobot += $answer->examQuestion->bobot ?? 1;
-            }
+        $exam->load('jadwalKuliah.mataKuliah');
+        $violationRule = $exam->violationRule ?? ExamViolationRule::create([
+            'exam_id' => $exam->id,
+            ...ExamViolationRule::getDefaults(),
+        ]);
+
+        return view('dosen.exam.violation-rules', compact('exam', 'violationRule'));
+    }
+
+    // Update violation rules
+    public function updateViolationRules(Request $request, Exam $exam)
+    {
+        $dosen = Dosen::where('user_id', Auth::id())->firstOrFail();
+
+        if ($exam->dosen_id !== $dosen->id) {
+            abort(403);
         }
 
-        $finalScore = $totalBobot > 0 ? ($totalScore / $totalBobot) * 100 : 0;
-        
-        $session->update(['nilai' => $finalScore]);
+        $validated = $request->validate([
+            'enable_tab_switch_detection' => 'nullable|boolean',
+            'max_tab_switch_count' => 'required|integer|min:1|max:100',
+            'terminate_on_tab_switch_limit' => 'nullable|boolean',
+            'enable_copy_paste_detection' => 'nullable|boolean',
+            'max_copy_paste_count' => 'required|integer|min:1|max:100',
+            'terminate_on_copy_paste_limit' => 'nullable|boolean',
+            'enable_window_blur_detection' => 'nullable|boolean',
+            'max_window_blur_count' => 'required|integer|min:1|max:100',
+            'terminate_on_window_blur_limit' => 'nullable|boolean',
+            'enable_fullscreen_exit_detection' => 'nullable|boolean',
+            'max_fullscreen_exit_count' => 'required|integer|min:1|max:100',
+            'terminate_on_fullscreen_exit_limit' => 'nullable|boolean',
+            'enable_multiple_device_detection' => 'nullable|boolean',
+            'terminate_on_multiple_device' => 'nullable|boolean',
+            'enable_time_based_termination' => 'nullable|boolean',
+            'max_violations_before_termination' => 'required|integer|min:1|max:100',
+            'warning_message' => 'nullable|string|max:1000',
+            'termination_message' => 'nullable|string|max:1000',
+        ], [], [
+            'max_tab_switch_count' => 'maksimal tab switch',
+            'max_copy_paste_count' => 'maksimal copy paste',
+            'max_window_blur_count' => 'maksimal window blur',
+            'max_fullscreen_exit_count' => 'maksimal fullscreen exit',
+            'max_violations_before_termination' => 'maksimal pelanggaran sebelum dihentikan',
+        ]);
 
-        return back()->with('success', 'Nilai berhasil disimpan');
+        // Convert checkbox values
+        $validated['enable_tab_switch_detection'] = $request->has('enable_tab_switch_detection');
+        $validated['terminate_on_tab_switch_limit'] = $request->has('terminate_on_tab_switch_limit');
+        $validated['enable_copy_paste_detection'] = $request->has('enable_copy_paste_detection');
+        $validated['terminate_on_copy_paste_limit'] = $request->has('terminate_on_copy_paste_limit');
+        $validated['enable_window_blur_detection'] = $request->has('enable_window_blur_detection');
+        $validated['terminate_on_window_blur_limit'] = $request->has('terminate_on_window_blur_limit');
+        $validated['enable_fullscreen_exit_detection'] = $request->has('enable_fullscreen_exit_detection');
+        $validated['terminate_on_fullscreen_exit_limit'] = $request->has('terminate_on_fullscreen_exit_limit');
+        $validated['enable_multiple_device_detection'] = $request->has('enable_multiple_device_detection');
+        $validated['terminate_on_multiple_device'] = $request->has('terminate_on_multiple_device');
+        $validated['enable_time_based_termination'] = $request->has('enable_time_based_termination');
+
+        $violationRule = $exam->violationRule ?? new ExamViolationRule(['exam_id' => $exam->id]);
+        $violationRule->fill($validated);
+        $violationRule->save();
+
+        return redirect()->route('dosen.exam.violation-rules', $exam)
+            ->with('success', 'Kriteria pelanggaran berhasil diperbarui');
+    }
+
+    // Show violations list
+    public function violations(Exam $exam)
+    {
+        $dosen = Dosen::where('user_id', Auth::id())->firstOrFail();
+
+        if ($exam->dosen_id !== $dosen->id) {
+            abort(403);
+        }
+
+        $exam->load('jadwalKuliah.mataKuliah');
+
+        // Get all sessions with violations
+        // Note: Filtering by violation count is done in PHP for SQLite compatibility
+        $sessions = ExamSession::where('exam_id', $exam->id)
+            ->with('mahasiswa')
+            ->whereNotNull('violations')
+            ->orderBy('started_at', 'desc')
+            ->get()
+            ->filter(function ($session) {
+                $violations = $session->violations ?? [];
+                return is_array($violations) && count($violations) > 0;
+            })
+            ->map(function ($session) {
+                $violations = $session->violations ?? [];
+                $session->violation_count = is_array($violations) ? count($violations) : 0;
+                return $session;
+            });
+
+        return view('dosen.exam.violations', compact('exam', 'sessions'));
+    }
+
+    // Show detail violation for a specific session
+    public function showViolationDetail(Exam $exam, ExamSession $session)
+    {
+        $dosen = Dosen::where('user_id', Auth::id())->firstOrFail();
+
+        if ($exam->dosen_id !== $dosen->id || $session->exam_id !== $exam->id) {
+            abort(403);
+        }
+
+        $exam->load('jadwalKuliah.mataKuliah');
+        $session->load('mahasiswa');
+        $violations = $session->violations ?? [];
+
+        return view('dosen.exam.violation-detail', compact('exam', 'session', 'violations'));
+    }
+
+    // Show all violations from all exams
+    public function allViolations()
+    {
+        $dosen = Dosen::where('user_id', Auth::id())->firstOrFail();
+
+        // Get all exams from this dosen
+        $examIds = Exam::where('dosen_id', $dosen->id)->pluck('id');
+
+        // Get all sessions with violations from all exams
+        // Note: Filtering by violation count is done in PHP for SQLite compatibility
+        $sessions = ExamSession::whereIn('exam_id', $examIds)
+            ->with(['exam.jadwalKuliah.mataKuliah', 'mahasiswa'])
+            ->whereNotNull('violations')
+            ->orderBy('started_at', 'desc')
+            ->get()
+            ->filter(function ($session) {
+                $violations = $session->violations ?? [];
+                return is_array($violations) && count($violations) > 0;
+            })
+            ->map(function ($session) {
+                $violations = $session->violations ?? [];
+                $session->violation_count = is_array($violations) ? count($violations) : 0;
+                return $session;
+            });
+
+        return view('dosen.exam.all-violations', compact('sessions'));
+    }
+
+    // Show ongoing exams with active students
+    public function ongoing()
+    {
+        $dosen = Dosen::where('user_id', Auth::id())->firstOrFail();
+
+        $now = \Carbon\Carbon::now(config('app.timezone'));
+
+        // Get all exams that are currently ongoing
+        $exams = Exam::where('dosen_id', $dosen->id)
+            ->where('status', 'published')
+            ->with(['jadwalKuliah.mataKuliah', 'jadwalKuliah.semester'])
+            ->get()
+            ->filter(function ($exam) use ($now) {
+                return $exam->isOngoing();
+            })
+            ->map(function ($exam) {
+                // Get active sessions (students currently taking the exam)
+                $exam->active_sessions = ExamSession::where('exam_id', $exam->id)
+                    ->where('status', 'started')
+                    ->whereNull('finished_at')
+                    ->with('mahasiswa')
+                    ->orderBy('started_at', 'desc')
+                    ->get();
+                
+                $exam->active_count = $exam->active_sessions->count();
+                $exam->total_sessions = ExamSession::where('exam_id', $exam->id)->count();
+                return $exam;
+            });
+
+        return view('dosen.exam.ongoing', compact('exams'));
+    }
+
+    // Show finished exams
+    public function finished()
+    {
+        $dosen = Dosen::where('user_id', Auth::id())->firstOrFail();
+
+        $now = \Carbon\Carbon::now(config('app.timezone'));
+
+        // Get all exams that are finished
+        $exams = Exam::where('dosen_id', $dosen->id)
+            ->where('status', 'published')
+            ->with(['jadwalKuliah.mataKuliah', 'jadwalKuliah.semester'])
+            ->get()
+            ->filter(function ($exam) use ($now) {
+                return $exam->isFinished();
+            })
+            ->map(function ($exam) {
+                $exam->total_sessions = ExamSession::where('exam_id', $exam->id)->count();
+                $exam->completed_sessions = ExamSession::where('exam_id', $exam->id)
+                    ->whereIn('status', ['submitted', 'auto_submitted'])
+                    ->count();
+                return $exam;
+            })
+            ->sortByDesc('selesai');
+
+        return view('dosen.exam.finished', compact('exams'));
+    }
+
+    // Show active students in an exam
+    public function activeStudents(Exam $exam)
+    {
+        $dosen = Dosen::where('user_id', Auth::id())->firstOrFail();
+
+        if ($exam->dosen_id !== $dosen->id) {
+            abort(403);
+        }
+
+        $exam->load('jadwalKuliah.mataKuliah');
+
+        // Get active sessions
+        $activeSessions = ExamSession::where('exam_id', $exam->id)
+            ->where('status', 'started')
+            ->whereNull('finished_at')
+            ->with('mahasiswa')
+            ->orderBy('started_at', 'asc')
+            ->get()
+            ->map(function ($session) use ($exam) {
+                // Calculate time remaining
+                $now = now();
+                $elapsed = $session->started_at->diffInSeconds($now);
+                $remaining = ($exam->durasi * 60) - $elapsed;
+                
+                $session->time_remaining_seconds = max(0, $remaining);
+                $session->time_remaining_formatted = gmdate('H:i:s', $session->time_remaining_seconds);
+                $session->progress_percentage = $exam->durasi > 0 ? (($exam->durasi * 60 - $remaining) / ($exam->durasi * 60)) * 100 : 0;
+                
+                return $session;
+            });
+
+        return view('dosen.exam.active-students', compact('exam', 'activeSessions'));
     }
 }

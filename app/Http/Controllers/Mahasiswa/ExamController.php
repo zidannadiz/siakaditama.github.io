@@ -221,7 +221,7 @@ class ExamController extends Controller
             }
         }
 
-        $exam->load('jadwalKuliah.mataKuliah');
+        $exam->load(['jadwalKuliah.mataKuliah', 'violationRule']);
 
         return view('mahasiswa.exam.take', compact('exam', 'session', 'questions', 'remaining'));
     }
@@ -315,43 +315,102 @@ class ExamController extends Controller
             return response()->json(['error' => 'Session tidak aktif'], 400);
         }
 
-        // Update counters
-        if ($validated['violation_type'] === 'tab_switch') {
-            $session->increment('tab_switch_count');
-        } elseif ($validated['violation_type'] === 'copy_paste') {
-            $session->increment('copy_paste_attempt_count');
-        } elseif ($validated['violation_type'] === 'window_blur') {
-            // Track window blur separately if needed
-        } elseif ($validated['violation_type'] === 'fullscreen_exit') {
-            // Track fullscreen exit separately if needed
+        // Get violation rules
+        $violationRule = $exam->violationRule;
+        if (!$violationRule) {
+            // Create default rules if not exists
+            $violationRule = \App\Models\ExamViolationRule::create([
+                'exam_id' => $exam->id,
+                ...\App\Models\ExamViolationRule::getDefaults(),
+            ]);
+        }
+
+        $violationType = $validated['violation_type'];
+        $shouldTerminate = false;
+        $terminationMessage = $violationRule->termination_message ?? 'Ujian dihentikan karena Anda telah melakukan pelanggaran berulang kali.';
+        $warningMessage = $violationRule->warning_message ?? 'Anda telah melakukan pelanggaran. Mohon untuk tidak melakukan hal yang sama lagi.';
+
+        // Check if this violation type is enabled and handle accordingly
+        switch ($violationType) {
+            case 'tab_switch':
+                if (!$violationRule->enable_tab_switch_detection) {
+                    return response()->json(['success' => false, 'message' => 'Deteksi tab switch tidak diaktifkan'], 200);
+                }
+                $session->increment('tab_switch_count');
+                if ($session->tab_switch_count > $violationRule->max_tab_switch_count) {
+                    if ($violationRule->terminate_on_tab_switch_limit) {
+                        $shouldTerminate = true;
+                    }
+                }
+                break;
+
+            case 'copy_paste':
+                if (!$violationRule->enable_copy_paste_detection) {
+                    return response()->json(['success' => false, 'message' => 'Deteksi copy-paste tidak diaktifkan'], 200);
+                }
+                $session->increment('copy_paste_attempt_count');
+                if ($session->copy_paste_attempt_count > $violationRule->max_copy_paste_count) {
+                    if ($violationRule->terminate_on_copy_paste_limit) {
+                        $shouldTerminate = true;
+                    }
+                }
+                break;
+
+            case 'window_blur':
+                if (!$violationRule->enable_window_blur_detection) {
+                    return response()->json(['success' => false, 'message' => 'Deteksi window blur tidak diaktifkan'], 200);
+                }
+                // Track window blur count (can add separate column or use violations array)
+                break;
+
+            case 'fullscreen_exit':
+                if (!$violationRule->enable_fullscreen_exit_detection) {
+                    return response()->json(['success' => false, 'message' => 'Deteksi fullscreen exit tidak diaktifkan'], 200);
+                }
+                // Track fullscreen exit count
+                break;
         }
 
         // Log violation
-        $session->addViolation($validated['violation_type'], [
+        $session->addViolation($violationType, [
             'timestamp' => now()->toISOString(),
             'user_agent' => $request->userAgent(),
         ]);
 
-        // Calculate total violations (count from violations array)
+        // Refresh session to get latest data
+        $session->refresh();
+
+        // Calculate total violations
         $totalViolations = count($session->violations ?? []);
 
-        // If violations >= 3, terminate and delete session (must restart from beginning)
-        if ($totalViolations >= 3) {
-            // Delete the session so student must start from beginning
-            $session->delete();
+        // Check if should terminate based on total violations
+        if ($violationRule->enable_time_based_termination && $totalViolations >= $violationRule->max_violations_before_termination) {
+            $shouldTerminate = true;
+        }
+
+        // If should terminate, terminate the session
+        if ($shouldTerminate) {
+            $session->update([
+                'status' => 'terminated',
+                'finished_at' => now(),
+            ]);
             
             return response()->json([
-                'error' => 'Anda telah melakukan 3 kali pelanggaran. Ujian dihentikan dan Anda harus mengulang dari awal.',
+                'error' => $terminationMessage,
                 'terminated' => true,
-                'must_restart' => true
+                'redirect_to_dashboard' => true,
+                'total_violations' => $totalViolations,
+                'redirect_url' => route('mahasiswa.dashboard'),
             ], 403);
         }
 
         return response()->json([
-            'success' => true, 
-            'warning' => 'Pelanggaran dicatat',
+            'success' => true,
+            'warning' => $warningMessage,
             'total_violations' => $totalViolations,
-            'remaining' => 3 - $totalViolations
+            'remaining' => $violationRule->max_violations_before_termination - $totalViolations,
+            'tab_switch_count' => $session->tab_switch_count,
+            'copy_paste_count' => $session->copy_paste_attempt_count,
         ]);
     }
 
