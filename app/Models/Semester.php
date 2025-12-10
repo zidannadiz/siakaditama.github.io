@@ -33,5 +33,13 @@ class Semester extends Model
     {
         return $this->hasMany(KRS::class);
     }
+
+    /**
+     * Accessor untuk kompatibilitas dengan kode yang menggunakan ->nama
+     */
+    public function getNamaAttribute()
+    {
+        return $this->nama_semester;
+    }
 }
 

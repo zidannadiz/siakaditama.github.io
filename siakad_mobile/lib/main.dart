@@ -44,6 +44,18 @@ import 'screens/admin/krs_approval_detail_screen.dart';
 import 'screens/admin/mahasiswa_list_screen.dart';
 import 'screens/admin/mahasiswa_form_screen.dart';
 import 'screens/admin/mahasiswa_detail_screen.dart';
+import 'screens/admin/prodi_list_screen.dart';
+import 'screens/admin/prodi_form_screen.dart';
+import 'screens/admin/prodi_detail_screen.dart';
+import 'screens/admin/dosen_list_screen.dart';
+import 'screens/admin/dosen_form_screen.dart';
+import 'screens/admin/dosen_detail_screen.dart';
+import 'screens/admin/mata_kuliah_list_screen.dart';
+import 'screens/admin/mata_kuliah_form_screen.dart';
+import 'screens/admin/mata_kuliah_detail_screen.dart';
+import 'screens/admin/semester_list_screen.dart';
+import 'screens/admin/semester_form_screen.dart';
+import 'screens/admin/semester_detail_screen.dart';
 import 'screens/forum/forum_list_screen.dart';
 import 'screens/forum/forum_detail_screen.dart';
 import 'screens/forum/forum_create_screen.dart';
@@ -177,6 +189,186 @@ final GoRouter _router = GoRouter(
           );
         }
         return MahasiswaFormScreen(mahasiswaId: id);
+      },
+    ),
+    // Admin Prodi CRUD routes
+    GoRoute(
+      path: '/admin/prodi',
+      builder: (context, state) => const ProdiListScreen(),
+    ),
+    GoRoute(
+      path: '/admin/prodi/create',
+      builder: (context, state) => const ProdiFormScreen(),
+    ),
+    GoRoute(
+      path: '/admin/prodi/:id',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'];
+        if (idStr == null) {
+          return const Scaffold(
+            body: Center(child: Text('Prodi ID tidak valid')),
+          );
+        }
+        final id = int.tryParse(idStr);
+        if (id == null) {
+          return const Scaffold(
+            body: Center(child: Text('Prodi ID tidak valid')),
+          );
+        }
+        return ProdiDetailScreen(prodiId: id);
+      },
+    ),
+    GoRoute(
+      path: '/admin/prodi/:id/edit',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'];
+        if (idStr == null) {
+          return const Scaffold(
+            body: Center(child: Text('Prodi ID tidak valid')),
+          );
+        }
+        final id = int.tryParse(idStr);
+        if (id == null) {
+          return const Scaffold(
+            body: Center(child: Text('Prodi ID tidak valid')),
+          );
+        }
+        return ProdiFormScreen(prodiId: id);
+      },
+    ),
+    // Admin Dosen CRUD routes
+    GoRoute(
+      path: '/admin/dosen',
+      builder: (context, state) => const DosenListScreen(),
+    ),
+    GoRoute(
+      path: '/admin/dosen/create',
+      builder: (context, state) => const DosenFormScreen(),
+    ),
+    GoRoute(
+      path: '/admin/dosen/:id',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'];
+        if (idStr == null) {
+          return const Scaffold(
+            body: Center(child: Text('Dosen ID tidak valid')),
+          );
+        }
+        final id = int.tryParse(idStr);
+        if (id == null) {
+          return const Scaffold(
+            body: Center(child: Text('Dosen ID tidak valid')),
+          );
+        }
+        return DosenDetailScreen(dosenId: id);
+      },
+    ),
+    GoRoute(
+      path: '/admin/dosen/:id/edit',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'];
+        if (idStr == null) {
+          return const Scaffold(
+            body: Center(child: Text('Dosen ID tidak valid')),
+          );
+        }
+        final id = int.tryParse(idStr);
+        if (id == null) {
+          return const Scaffold(
+            body: Center(child: Text('Dosen ID tidak valid')),
+          );
+        }
+        return DosenFormScreen(dosenId: id);
+      },
+    ),
+    // Admin Mata Kuliah CRUD routes
+    GoRoute(
+      path: '/admin/mata-kuliah',
+      builder: (context, state) => const MataKuliahListScreen(),
+    ),
+    GoRoute(
+      path: '/admin/mata-kuliah/create',
+      builder: (context, state) => const MataKuliahFormScreen(),
+    ),
+    GoRoute(
+      path: '/admin/mata-kuliah/:id',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'];
+        if (idStr == null) {
+          return const Scaffold(
+            body: Center(child: Text('Mata Kuliah ID tidak valid')),
+          );
+        }
+        final id = int.tryParse(idStr);
+        if (id == null) {
+          return const Scaffold(
+            body: Center(child: Text('Mata Kuliah ID tidak valid')),
+          );
+        }
+        return MataKuliahDetailScreen(mataKuliahId: id);
+      },
+    ),
+    GoRoute(
+      path: '/admin/mata-kuliah/:id/edit',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'];
+        if (idStr == null) {
+          return const Scaffold(
+            body: Center(child: Text('Mata Kuliah ID tidak valid')),
+          );
+        }
+        final id = int.tryParse(idStr);
+        if (id == null) {
+          return const Scaffold(
+            body: Center(child: Text('Mata Kuliah ID tidak valid')),
+          );
+        }
+        return MataKuliahFormScreen(mataKuliahId: id);
+      },
+    ),
+    // Admin Semester CRUD routes
+    GoRoute(
+      path: '/admin/semester',
+      builder: (context, state) => const SemesterListScreen(),
+    ),
+    GoRoute(
+      path: '/admin/semester/create',
+      builder: (context, state) => const SemesterFormScreen(),
+    ),
+    GoRoute(
+      path: '/admin/semester/:id',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'];
+        if (idStr == null) {
+          return const Scaffold(
+            body: Center(child: Text('Semester ID tidak valid')),
+          );
+        }
+        final id = int.tryParse(idStr);
+        if (id == null) {
+          return const Scaffold(
+            body: Center(child: Text('Semester ID tidak valid')),
+          );
+        }
+        return SemesterDetailScreen(semesterId: id);
+      },
+    ),
+    GoRoute(
+      path: '/admin/semester/:id/edit',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'];
+        if (idStr == null) {
+          return const Scaffold(
+            body: Center(child: Text('Semester ID tidak valid')),
+          );
+        }
+        final id = int.tryParse(idStr);
+        if (id == null) {
+          return const Scaffold(
+            body: Center(child: Text('Semester ID tidak valid')),
+          );
+        }
+        return SemesterFormScreen(semesterId: id);
       },
     ),
     GoRoute(

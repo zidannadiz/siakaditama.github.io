@@ -181,6 +181,30 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     onTap: () => context.push('/admin/mahasiswa'),
                   ),
                   _MenuCard(
+                    title: 'Program Studi',
+                    icon: Icons.school,
+                    color: Colors.indigo,
+                    onTap: () => context.push('/admin/prodi'),
+                  ),
+                  _MenuCard(
+                    title: 'Dosen',
+                    icon: Icons.person_outline,
+                    color: Colors.teal,
+                    onTap: () => context.push('/admin/dosen'),
+                  ),
+                  _MenuCard(
+                    title: 'Mata Kuliah',
+                    icon: Icons.menu_book,
+                    color: Colors.deepPurple,
+                    onTap: () => context.push('/admin/mata-kuliah'),
+                  ),
+                  _MenuCard(
+                    title: 'Semester',
+                    icon: Icons.calendar_today,
+                    color: Colors.amber,
+                    onTap: () => context.push('/admin/semester'),
+                  ),
+                  _MenuCard(
                     title: 'Profil',
                     icon: Icons.person,
                     color: Colors.purple,

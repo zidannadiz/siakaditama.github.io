@@ -41,9 +41,20 @@ class MataKuliahController extends Controller
             'nama' => 'required|string|max:255',
             'sks' => 'required|integer|min:1',
             'prodi_id' => 'required|exists:prodis,id',
+            'semester' => 'nullable|integer|min:1|max:14',
+            'deskripsi' => 'nullable|string',
+            'jenis' => 'nullable|in:wajib,pilihan',
         ]);
 
-        $mataKuliah = MataKuliah::create($validated);
+        $mataKuliah = MataKuliah::create([
+            'kode_mk' => $validated['kode_mk'],
+            'nama_mk' => $validated['nama'],
+            'sks' => $validated['sks'],
+            'prodi_id' => $validated['prodi_id'],
+            'semester' => $validated['semester'] ?? null,
+            'deskripsi' => $validated['deskripsi'] ?? null,
+            'jenis' => $validated['jenis'] ?? 'wajib',
+        ]);
 
         return response()->json([
             'success' => true,
@@ -67,7 +78,11 @@ class MataKuliahController extends Controller
                 'kode_mk' => $mataKuliah->kode_mk,
                 'nama' => $mataKuliah->nama,
                 'sks' => $mataKuliah->sks,
+                'prodi_id' => $mataKuliah->prodi_id,
                 'prodi' => $mataKuliah->prodi->nama ?? null,
+                'semester' => $mataKuliah->semester,
+                'deskripsi' => $mataKuliah->deskripsi,
+                'jenis' => $mataKuliah->jenis,
             ],
         ]);
     }
@@ -79,9 +94,20 @@ class MataKuliahController extends Controller
             'nama' => 'required|string|max:255',
             'sks' => 'required|integer|min:1',
             'prodi_id' => 'required|exists:prodis,id',
+            'semester' => 'nullable|integer|min:1|max:14',
+            'deskripsi' => 'nullable|string',
+            'jenis' => 'nullable|in:wajib,pilihan',
         ]);
 
-        $mataKuliah->update($validated);
+        $mataKuliah->update([
+            'kode_mk' => $validated['kode_mk'],
+            'nama_mk' => $validated['nama'],
+            'sks' => $validated['sks'],
+            'prodi_id' => $validated['prodi_id'],
+            'semester' => $validated['semester'] ?? null,
+            'deskripsi' => $validated['deskripsi'] ?? null,
+            'jenis' => $validated['jenis'] ?? 'wajib',
+        ]);
 
         return response()->json([
             'success' => true,

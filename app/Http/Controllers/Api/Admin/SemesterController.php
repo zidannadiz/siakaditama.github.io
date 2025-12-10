@@ -42,7 +42,12 @@ class SemesterController extends Controller
             Semester::where('status', 'aktif')->update(['status' => 'nonaktif']);
         }
 
-        $semester = Semester::create($validated);
+        $semester = Semester::create([
+            'nama_semester' => $validated['nama'],
+            'tahun_ajaran' => $validated['tahun_ajaran'],
+            'jenis' => $validated['jenis'],
+            'status' => $validated['status'],
+        ]);
 
         return response()->json([
             'success' => true,
@@ -84,7 +89,12 @@ class SemesterController extends Controller
                 ->update(['status' => 'nonaktif']);
         }
 
-        $semester->update($validated);
+        $semester->update([
+            'nama_semester' => $validated['nama'],
+            'tahun_ajaran' => $validated['tahun_ajaran'],
+            'jenis' => $validated['jenis'],
+            'status' => $validated['status'],
+        ]);
 
         return response()->json([
             'success' => true,
