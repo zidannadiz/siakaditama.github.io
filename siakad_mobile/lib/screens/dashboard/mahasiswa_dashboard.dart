@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../services/api_service.dart';
 import '../../services/storage_service.dart';
+import '../../widgets/notifikasi_badge.dart';
 
 class MahasiswaDashboard extends StatefulWidget {
   const MahasiswaDashboard({Key? key}) : super(key: key);
@@ -73,9 +74,7 @@ class _MahasiswaDashboardState extends State<MahasiswaDashboard> {
   Widget build(BuildContext context) {
     if (isLoading) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Dashboard Mahasiswa'),
-        ),
+        appBar: AppBar(title: const Text('Dashboard Mahasiswa')),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -91,6 +90,7 @@ class _MahasiswaDashboardState extends State<MahasiswaDashboard> {
       appBar: AppBar(
         title: const Text('Dashboard Mahasiswa'),
         actions: [
+          const NotifikasiBadge(),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadData,
@@ -140,7 +140,7 @@ class _MahasiswaDashboardState extends State<MahasiswaDashboard> {
                             ),
                             if (mahasiswa['nim'] != null)
                               Text(
-                                'NIM: ${mahasiswa['nim']}',
+                                'NIM: ${mahasiswa['nim'] ?? '-'}',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.grey[600],
@@ -148,7 +148,7 @@ class _MahasiswaDashboardState extends State<MahasiswaDashboard> {
                               ),
                             if (mahasiswa['prodi'] != null)
                               Text(
-                                'Prodi: ${mahasiswa['prodi']}',
+                                'Prodi: ${mahasiswa['prodi'] ?? '-'}',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.grey[600],
@@ -172,11 +172,15 @@ class _MahasiswaDashboardState extends State<MahasiswaDashboard> {
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           children: [
-                            const Icon(Icons.calendar_today, color: Colors.blue),
+                            const Icon(
+                              Icons.calendar_today,
+                              color: Colors.blue,
+                            ),
                             const SizedBox(height: 8),
-                            if (semesterAktif != null)
+                            if (semesterAktif != null &&
+                                semesterAktif['nama'] != null)
                               Text(
-                                '${semesterAktif['nama']}',
+                                '${semesterAktif['nama'] ?? '-'}',
                                 style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
@@ -230,33 +234,38 @@ class _MahasiswaDashboardState extends State<MahasiswaDashboard> {
               if (jadwalHariIni.isNotEmpty) ...[
                 Text(
                   'Jadwal Hari Ini',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
-                ...jadwalHariIni.map<Widget>((jadwal) => Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    leading: const Icon(Icons.schedule, color: Colors.blue),
-                    title: Text(
-                      jadwal['mata_kuliah'] ?? '-',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                ...jadwalHariIni.map<Widget>(
+                  (jadwal) => Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: ListTile(
+                      leading: const Icon(Icons.schedule, color: Colors.blue),
+                      title: Text(
+                        jadwal['mata_kuliah'] ?? '-',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (jadwal['dosen'] != null)
+                            Text('Dosen: ${jadwal['dosen'] ?? '-'}'),
+                          if (jadwal['jam_mulai'] != null &&
+                              jadwal['jam_selesai'] != null)
+                            Text(
+                              '${jadwal['jam_mulai'] ?? '-'} - ${jadwal['jam_selesai'] ?? '-'}',
+                            ),
+                          if (jadwal['ruangan'] != null)
+                            Text('Ruangan: ${jadwal['ruangan'] ?? '-'}'),
+                        ],
+                      ),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                     ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (jadwal['dosen'] != null)
-                          Text('Dosen: ${jadwal['dosen']}'),
-                        if (jadwal['jam_mulai'] != null && jadwal['jam_selesai'] != null)
-                          Text('${jadwal['jam_mulai']} - ${jadwal['jam_selesai']}'),
-                        if (jadwal['ruangan'] != null)
-                          Text('Ruangan: ${jadwal['ruangan']}'),
-                      ],
-                    ),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   ),
-                )),
+                ),
               ] else ...[
                 Card(
                   child: Padding(
@@ -273,37 +282,136 @@ class _MahasiswaDashboardState extends State<MahasiswaDashboard> {
               ],
               const SizedBox(height: 24),
 
+              // Quick Access Menu
+              Text(
+                'Menu Utama',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              GridView.count(
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 1.5,
+                children: [
+                  _MenuCard(
+                    title: 'KRS',
+                    icon: Icons.book,
+                    color: Colors.green,
+                    onTap: () => context.push('/mahasiswa/krs'),
+                  ),
+                  _MenuCard(
+                    title: 'KHS',
+                    icon: Icons.assignment,
+                    color: Colors.blue,
+                    onTap: () => context.push('/mahasiswa/khs'),
+                  ),
+                  _MenuCard(
+                    title: 'Profil',
+                    icon: Icons.person,
+                    color: Colors.purple,
+                    onTap: () => context.push('/profile'),
+                  ),
+                  _MenuCard(
+                    title: 'Notifikasi',
+                    icon: Icons.notifications,
+                    color: Colors.red,
+                    onTap: () => context.push('/notifikasi'),
+                  ),
+                  _MenuCard(
+                    title: 'Pengumuman',
+                    icon: Icons.announcement,
+                    color: Colors.orange,
+                    onTap: () => context.push('/pengumuman'),
+                  ),
+                  _MenuCard(
+                    title: 'Chat',
+                    icon: Icons.chat,
+                    color: Colors.green,
+                    onTap: () => context.push('/chat'),
+                  ),
+                  _MenuCard(
+                    title: 'Pembayaran',
+                    icon: Icons.payment,
+                    color: Colors.purple,
+                    onTap: () => context.push('/payment'),
+                  ),
+                  _MenuCard(
+                    title: 'Presensi',
+                    icon: Icons.event_available,
+                    color: Colors.teal,
+                    onTap: () => context.push('/mahasiswa/presensi'),
+                  ),
+                  _MenuCard(
+                    title: 'Tugas',
+                    icon: Icons.assignment,
+                    color: Colors.deepPurple,
+                    onTap: () => context.push('/mahasiswa/assignment'),
+                  ),
+                  _MenuCard(
+                    title: 'Ujian',
+                    icon: Icons.quiz,
+                    color: Colors.indigo,
+                    onTap: () => context.push('/mahasiswa/exam'),
+                  ),
+                  _MenuCard(
+                    title: 'Forum',
+                    icon: Icons.forum,
+                    color: Colors.indigo,
+                    onTap: () => context.push('/forum'),
+                  ),
+                  _MenuCard(
+                    title: 'Q&A',
+                    icon: Icons.help_outline,
+                    color: Colors.cyan,
+                    onTap: () => context.push('/qna'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
               // KRS Semester Ini
               if (krsSemesterIni.isNotEmpty) ...[
                 Text(
                   'KRS Semester Ini',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
-                ...krsSemesterIni.take(5).map<Widget>((krs) => Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    leading: const Icon(Icons.book, color: Colors.green),
-                    title: Text(
-                      krs['mata_kuliah'] ?? '-',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                ...krsSemesterIni
+                    .take(5)
+                    .map<Widget>(
+                      (krs) => Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          leading: const Icon(Icons.book, color: Colors.green),
+                          title: Text(
+                            krs['mata_kuliah'] ?? '-',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (krs['dosen'] != null)
+                                Text('Dosen: ${krs['dosen'] ?? '-'}'),
+                              if (krs['hari'] != null)
+                                Text('Hari: ${krs['hari'] ?? '-'}'),
+                              if (krs['sks'] != null)
+                                Text('SKS: ${krs['sks'] ?? 0}'),
+                            ],
+                          ),
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                          ),
+                        ),
+                      ),
                     ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (krs['dosen'] != null)
-                          Text('Dosen: ${krs['dosen']}'),
-                        if (krs['hari'] != null)
-                          Text('Hari: ${krs['hari']}'),
-                        if (krs['sks'] != null)
-                          Text('SKS: ${krs['sks']}'),
-                      ],
-                    ),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  ),
-                )),
               ],
             ],
           ),
@@ -313,3 +421,46 @@ class _MahasiswaDashboardState extends State<MahasiswaDashboard> {
   }
 }
 
+class _MenuCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _MenuCard({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 32, color: color),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

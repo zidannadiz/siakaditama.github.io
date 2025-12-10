@@ -25,5 +25,18 @@ class Prodi extends Model
     {
         return $this->hasMany(MataKuliah::class);
     }
+
+    /**
+     * Accessor untuk kompatibilitas dengan kode yang menggunakan ->kode dan ->nama
+     */
+    public function getKodeAttribute()
+    {
+        return $this->kode_prodi;
+    }
+
+    public function getNamaAttribute()
+    {
+        return $this->nama_prodi;
+    }
 }
 

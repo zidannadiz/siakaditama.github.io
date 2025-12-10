@@ -30,5 +30,13 @@ class MataKuliah extends Model
     {
         return $this->hasMany(JadwalKuliah::class);
     }
+
+    /**
+     * Accessor untuk kompatibilitas dengan kode yang menggunakan ->nama
+     */
+    public function getNamaAttribute()
+    {
+        return $this->nama_mk;
+    }
 }
 

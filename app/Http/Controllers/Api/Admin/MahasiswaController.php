@@ -89,7 +89,10 @@ class MahasiswaController extends Controller
                 'nim' => $mahasiswa->nim,
                 'nama' => $mahasiswa->nama,
                 'email' => $mahasiswa->user->email ?? null,
+                'prodi_id' => $mahasiswa->prodi_id,
                 'prodi' => $mahasiswa->prodi->nama ?? null,
+                'jenis_kelamin' => $mahasiswa->jenis_kelamin,
+                'semester' => $mahasiswa->semester,
                 'status' => $mahasiswa->status,
             ],
         ]);

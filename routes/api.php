@@ -5,8 +5,12 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\Mahasiswa\KRSController as MahasiswaKRSController;
 use App\Http\Controllers\Api\Mahasiswa\KHSController;
 use App\Http\Controllers\Api\Mahasiswa\PresensiController as MahasiswaPresensiController;
+use App\Http\Controllers\Api\Mahasiswa\AssignmentController as MahasiswaAssignmentController;
+use App\Http\Controllers\Api\Mahasiswa\ExamController as MahasiswaExamController;
 use App\Http\Controllers\Api\Dosen\NilaiController as DosenNilaiController;
 use App\Http\Controllers\Api\Dosen\PresensiController as DosenPresensiController;
+use App\Http\Controllers\Api\Dosen\AssignmentController as DosenAssignmentController;
+use App\Http\Controllers\Api\Dosen\ExamController as DosenExamController;
 use App\Http\Controllers\Api\NotifikasiController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\Admin\MahasiswaController as AdminMahasiswaController;
@@ -15,7 +19,8 @@ use App\Http\Controllers\Api\Admin\ProdiController;
 use App\Http\Controllers\Api\Admin\MataKuliahController;
 use App\Http\Controllers\Api\Admin\JadwalKuliahController;
 use App\Http\Controllers\Api\Admin\SemesterController;
-use App\Http\Controllers\Api\Admin\PengumumanController;
+use App\Http\Controllers\Api\Admin\PengumumanController as AdminPengumumanController;
+use App\Http\Controllers\Api\PengumumanController;
 use App\Http\Controllers\Api\Admin\KRSController as AdminKRSController;
 use App\Http\Controllers\Api\QnA\QuestionController as QnAQuestionController;
 use App\Http\Controllers\Api\Forum\ForumController as ApiForumController;
@@ -61,6 +66,12 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // 60 
         Route::post('/read-all', [NotifikasiController::class, 'markAllAsRead']);
         Route::get('/unread-count', [NotifikasiController::class, 'getUnreadCount']);
         Route::get('/recent', [NotifikasiController::class, 'getRecent']);
+    });
+
+    // Pengumuman routes (untuk semua role - read only)
+    Route::prefix('pengumuman')->group(function () {
+        Route::get('/', [PengumumanController::class, 'index']);
+        Route::get('/{pengumuman}', [PengumumanController::class, 'show']);
     });
 
     // Q&A routes (untuk semua role)
@@ -123,6 +134,24 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // 60 
             Route::get('/', [MahasiswaPresensiController::class, 'index']);
             Route::get('/{jadwal_id}', [MahasiswaPresensiController::class, 'show']);
         });
+
+        Route::prefix('assignment')->group(function () {
+            Route::get('/', [MahasiswaAssignmentController::class, 'index']);
+            Route::get('/{assignment}', [MahasiswaAssignmentController::class, 'show']);
+            Route::post('/{assignment}/submit', [MahasiswaAssignmentController::class, 'submit']);
+            Route::put('/{assignment}/submission/{submission}', [MahasiswaAssignmentController::class, 'updateSubmission']);
+            Route::get('/{assignment}/download', [MahasiswaAssignmentController::class, 'downloadFile'])->name('assignment.download-file');
+        });
+
+        Route::prefix('exam')->group(function () {
+            Route::get('/', [MahasiswaExamController::class, 'index']);
+            Route::get('/{exam}', [MahasiswaExamController::class, 'show']);
+            Route::post('/{exam}/start', [MahasiswaExamController::class, 'start']);
+            Route::get('/{exam}/take/{session}', [MahasiswaExamController::class, 'take']);
+            Route::post('/{exam}/save-answer', [MahasiswaExamController::class, 'saveAnswer']);
+            Route::post('/{exam}/submit', [MahasiswaExamController::class, 'submit']);
+            Route::get('/{exam}/result/{session}', [MahasiswaExamController::class, 'result']);
+        });
     });
 
     // Dosen routes
@@ -141,6 +170,29 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // 60 
             Route::post('/{jadwal_id}', [DosenPresensiController::class, 'store']);
             Route::get('/{jadwal_id}', [DosenPresensiController::class, 'show']);
         });
+
+        Route::prefix('assignment')->group(function () {
+            Route::get('/', [DosenAssignmentController::class, 'index']);
+            Route::post('/', [DosenAssignmentController::class, 'store']);
+            Route::get('/{assignment}', [DosenAssignmentController::class, 'show']);
+            Route::put('/{assignment}', [DosenAssignmentController::class, 'update']);
+            Route::delete('/{assignment}', [DosenAssignmentController::class, 'destroy']);
+            Route::post('/{assignment}/grade/{submission_id}', [DosenAssignmentController::class, 'gradeSubmission']);
+        });
+
+        Route::prefix('exam')->group(function () {
+            Route::get('/', [DosenExamController::class, 'index']);
+            Route::post('/', [DosenExamController::class, 'store']);
+            Route::get('/{exam}', [DosenExamController::class, 'show']);
+            Route::put('/{exam}', [DosenExamController::class, 'update']);
+            Route::delete('/{exam}', [DosenExamController::class, 'destroy']);
+            Route::post('/{exam}/question', [DosenExamController::class, 'addQuestion']);
+            Route::put('/{exam}/question/{question}', [DosenExamController::class, 'updateQuestion']);
+            Route::delete('/{exam}/question/{question}', [DosenExamController::class, 'deleteQuestion']);
+            Route::get('/{exam}/results', [DosenExamController::class, 'results']);
+            Route::get('/{exam}/grade/{session}', [DosenExamController::class, 'showGradeSession']);
+            Route::post('/{exam}/grade/{session}', [DosenExamController::class, 'gradeSession']);
+        });
     });
 
     // Admin routes
@@ -151,10 +203,11 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // 60 
         Route::apiResource('mata-kuliah', MataKuliahController::class);
         Route::apiResource('jadwal-kuliah', JadwalKuliahController::class);
         Route::apiResource('semester', SemesterController::class);
-        Route::apiResource('pengumuman', PengumumanController::class);
+        Route::apiResource('pengumuman', AdminPengumumanController::class);
 
         Route::prefix('krs')->group(function () {
             Route::get('/', [AdminKRSController::class, 'index']);
+            Route::get('/{krs}', [AdminKRSController::class, 'show']);
             Route::post('/{krs}/approve', [AdminKRSController::class, 'approve']);
             Route::post('/{krs}/reject', [AdminKRSController::class, 'reject']);
         });

@@ -27,11 +27,14 @@ class ProdiController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'kode' => 'required|string|max:10|unique:prodis,kode',
+            'kode' => 'required|string|max:10|unique:prodis,kode_prodi',
             'nama' => 'required|string|max:255',
         ]);
 
-        $prodi = Prodi::create($validated);
+        $prodi = Prodi::create([
+            'kode_prodi' => $validated['kode'],
+            'nama_prodi' => $validated['nama'],
+        ]);
 
         return response()->json([
             'success' => true,
@@ -59,11 +62,14 @@ class ProdiController extends Controller
     public function update(Request $request, Prodi $prodi)
     {
         $validated = $request->validate([
-            'kode' => 'required|string|max:10|unique:prodis,kode,' . $prodi->id,
+            'kode' => 'required|string|max:10|unique:prodis,kode_prodi,' . $prodi->id,
             'nama' => 'required|string|max:255',
         ]);
 
-        $prodi->update($validated);
+        $prodi->update([
+            'kode_prodi' => $validated['kode'],
+            'nama_prodi' => $validated['nama'],
+        ]);
 
         return response()->json([
             'success' => true,
