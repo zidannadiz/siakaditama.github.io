@@ -21,8 +21,9 @@ class PengumumanController extends Controller
                         'judul' => $pengumuman->judul,
                         'isi' => $pengumuman->isi,
                         'target' => $pengumuman->target,
-                        'is_pinned' => $pengumuman->is_pinned,
+                        'is_pinned' => $pengumuman->is_pinned ?? false,
                         'published_at' => $pengumuman->published_at?->toISOString(),
+                        'created_at' => $pengumuman->created_at->toISOString(),
                     ];
                 }),
                 'pagination' => [

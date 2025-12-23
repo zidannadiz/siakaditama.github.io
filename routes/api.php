@@ -135,6 +135,11 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // 60 
             Route::get('/{jadwal_id}', [MahasiswaPresensiController::class, 'show']);
         });
 
+        Route::prefix('qr-presensi')->group(function () {
+            Route::post('/scan', [\App\Http\Controllers\Api\Mahasiswa\QrCodePresensiController::class, 'scan']);
+            Route::get('/history', [\App\Http\Controllers\Api\Mahasiswa\QrCodePresensiController::class, 'history']);
+        });
+
         Route::prefix('assignment')->group(function () {
             Route::get('/', [MahasiswaAssignmentController::class, 'index']);
             Route::get('/{assignment}', [MahasiswaAssignmentController::class, 'show']);
@@ -169,6 +174,14 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // 60 
             Route::get('/create/{jadwal_id}', [DosenPresensiController::class, 'create']);
             Route::post('/{jadwal_id}', [DosenPresensiController::class, 'store']);
             Route::get('/{jadwal_id}', [DosenPresensiController::class, 'show']);
+        });
+
+        Route::prefix('qr-presensi')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Dosen\QrCodePresensiController::class, 'index']);
+            Route::post('/generate/{jadwal_id}', [\App\Http\Controllers\Api\Dosen\QrCodePresensiController::class, 'generate']);
+            Route::get('/{token}', [\App\Http\Controllers\Api\Dosen\QrCodePresensiController::class, 'show']);
+            Route::get('/{token}/status', [\App\Http\Controllers\Api\Dosen\QrCodePresensiController::class, 'status']);
+            Route::post('/{token}/stop', [\App\Http\Controllers\Api\Dosen\QrCodePresensiController::class, 'stop']);
         });
 
         Route::prefix('assignment')->group(function () {
@@ -211,6 +224,58 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // 60 
             Route::post('/{krs}/approve', [AdminKRSController::class, 'approve']);
             Route::post('/{krs}/reject', [AdminKRSController::class, 'reject']);
         });
+
+        Route::prefix('payment')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Admin\PaymentController::class, 'index']);
+            Route::get('/statistics', [\App\Http\Controllers\Api\Admin\PaymentController::class, 'statistics']);
+            Route::get('/{payment}', [\App\Http\Controllers\Api\Admin\PaymentController::class, 'show']);
+            Route::post('/{payment}/verify', [\App\Http\Controllers\Api\Admin\PaymentController::class, 'verify']);
+            Route::post('/{payment}/cancel', [\App\Http\Controllers\Api\Admin\PaymentController::class, 'cancel']);
+        });
+
+        Route::apiResource('kalender-akademik', \App\Http\Controllers\Api\Admin\KalenderAkademikController::class);
+
+        Route::prefix('system-settings')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Admin\SystemSettingsController::class, 'index']);
+            Route::post('/semester', [\App\Http\Controllers\Api\Admin\SystemSettingsController::class, 'updateSemester']);
+            Route::post('/grading', [\App\Http\Controllers\Api\Admin\SystemSettingsController::class, 'updateGrading']);
+            Route::post('/letter-grades', [\App\Http\Controllers\Api\Admin\SystemSettingsController::class, 'storeLetterGrade']);
+            Route::put('/letter-grades/{id}', [\App\Http\Controllers\Api\Admin\SystemSettingsController::class, 'updateLetterGrade']);
+            Route::delete('/letter-grades/{id}', [\App\Http\Controllers\Api\Admin\SystemSettingsController::class, 'deleteLetterGrade']);
+            Route::post('/app-info', [\App\Http\Controllers\Api\Admin\SystemSettingsController::class, 'updateAppInfo']);
+        });
+
+        Route::prefix('laporan')->group(function () {
+            Route::get('/pembayaran', [\App\Http\Controllers\Api\Admin\LaporanPembayaranController::class, 'index']);
+            Route::get('/akademik', [\App\Http\Controllers\Api\Admin\LaporanAkademikController::class, 'index']);
+            Route::get('/akademik/presensi', [\App\Http\Controllers\Api\Admin\LaporanAkademikController::class, 'statistikPresensi']);
+        });
+
+        Route::get('/statistik-presensi', [\App\Http\Controllers\Api\Admin\StatistikPresensiController::class, 'index']);
+
+        Route::prefix('backup')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Admin\BackupController::class, 'index']);
+            Route::post('/', [\App\Http\Controllers\Api\Admin\BackupController::class, 'create']);
+            Route::post('/restore', [\App\Http\Controllers\Api\Admin\BackupController::class, 'restore']);
+            Route::delete('/{filename}', [\App\Http\Controllers\Api\Admin\BackupController::class, 'destroy']);
+        });
+
+        Route::prefix('bank')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Admin\BankController::class, 'index']);
+            Route::put('/{bank}', [\App\Http\Controllers\Api\Admin\BankController::class, 'update']);
+            Route::post('/{bank}/toggle-status', [\App\Http\Controllers\Api\Admin\BankController::class, 'toggleStatus']);
+        });
+
+        Route::prefix('audit-log')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\Admin\AuditLogController::class, 'index']);
+            Route::get('/{auditLog}', [\App\Http\Controllers\Api\Admin\AuditLogController::class, 'show']);
+        });
     });
+});
+
+// Public Kalender Akademik (untuk semua role)
+Route::middleware('auth:sanctum')->prefix('kalender-akademik')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Api\KalenderAkademikController::class, 'index']);
+    Route::get('/{id}', [\App\Http\Controllers\Api\KalenderAkademikController::class, 'show']);
 });
 

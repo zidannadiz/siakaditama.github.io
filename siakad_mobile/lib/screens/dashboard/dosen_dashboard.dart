@@ -269,6 +269,12 @@ class _DosenDashboardState extends State<DosenDashboard> {
                     onTap: () => context.push('/dosen/presensi'),
                   ),
                   _MenuCard(
+                    title: 'QR Code Presensi',
+                    icon: Icons.qr_code_scanner,
+                    color: Colors.teal,
+                    onTap: () => context.push('/dosen/qr-presensi'),
+                  ),
+                  _MenuCard(
                     title: 'Tugas',
                     icon: Icons.assignment,
                     color: Colors.deepPurple,
@@ -321,6 +327,12 @@ class _DosenDashboardState extends State<DosenDashboard> {
                     icon: Icons.help_outline,
                     color: Colors.cyan,
                     onTap: () => context.push('/qna'),
+                  ),
+                  _MenuCard(
+                    title: 'Kalender Akademik',
+                    icon: Icons.calendar_today,
+                    color: Colors.indigo,
+                    onTap: () => context.push('/kalender-akademik'),
                   ),
                 ],
               ),

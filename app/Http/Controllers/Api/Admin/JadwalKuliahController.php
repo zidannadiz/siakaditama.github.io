@@ -79,8 +79,11 @@ class JadwalKuliahController extends Controller
             'success' => true,
             'data' => [
                 'id' => $jadwalKuliah->id,
+                'mata_kuliah_id' => $jadwalKuliah->mata_kuliah_id,
                 'mata_kuliah' => $jadwalKuliah->mataKuliah->nama ?? null,
+                'dosen_id' => $jadwalKuliah->dosen_id,
                 'dosen' => $jadwalKuliah->dosen->nama ?? null,
+                'semester_id' => $jadwalKuliah->semester_id,
                 'semester' => $jadwalKuliah->semester->nama ?? null,
                 'hari' => $jadwalKuliah->hari,
                 'jam_mulai' => $jadwalKuliah->jam_mulai,

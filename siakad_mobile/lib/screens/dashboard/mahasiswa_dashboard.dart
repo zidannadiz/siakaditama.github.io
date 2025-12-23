@@ -347,6 +347,12 @@ class _MahasiswaDashboardState extends State<MahasiswaDashboard> {
                     onTap: () => context.push('/mahasiswa/presensi'),
                   ),
                   _MenuCard(
+                    title: 'Scan QR Presensi',
+                    icon: Icons.qr_code_scanner,
+                    color: Colors.orange,
+                    onTap: () => context.push('/mahasiswa/qr-presensi/scan'),
+                  ),
+                  _MenuCard(
                     title: 'Tugas',
                     icon: Icons.assignment,
                     color: Colors.deepPurple,
@@ -369,6 +375,12 @@ class _MahasiswaDashboardState extends State<MahasiswaDashboard> {
                     icon: Icons.help_outline,
                     color: Colors.cyan,
                     onTap: () => context.push('/qna'),
+                  ),
+                  _MenuCard(
+                    title: 'Kalender Akademik',
+                    icon: Icons.calendar_today,
+                    color: Colors.indigo,
+                    onTap: () => context.push('/kalender-akademik'),
                   ),
                 ],
               ),

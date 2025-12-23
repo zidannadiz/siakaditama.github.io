@@ -13,13 +13,14 @@ import 'screens/dosen/nilai_input_screen.dart';
 import 'screens/dosen/presensi_list_screen.dart' as dosen_presensi;
 import 'screens/dosen/presensi_input_screen.dart';
 import 'screens/notifikasi/notifikasi_screen.dart';
-import 'screens/pengumuman/pengumuman_list_screen.dart';
-import 'screens/pengumuman/pengumuman_detail_screen.dart';
+import 'screens/pengumuman/pengumuman_list_screen.dart' as pengumuman_public;
+import 'screens/pengumuman/pengumuman_detail_screen.dart'
+    as pengumuman_public_detail;
 import 'screens/chat/conversation_list_screen.dart';
 import 'screens/chat/chat_detail_screen.dart';
 import 'screens/chat/create_conversation_screen.dart';
-import 'screens/payment/payment_list_screen.dart';
-import 'screens/payment/payment_detail_screen.dart';
+import 'screens/payment/payment_list_screen.dart' as payment_public;
+import 'screens/payment/payment_detail_screen.dart' as payment_public_detail;
 import 'screens/payment/payment_create_screen.dart';
 import 'screens/mahasiswa/presensi_list_screen.dart' as mahasiswa_presensi;
 import 'screens/mahasiswa/presensi_detail_screen.dart';
@@ -56,12 +57,35 @@ import 'screens/admin/mata_kuliah_detail_screen.dart';
 import 'screens/admin/semester_list_screen.dart';
 import 'screens/admin/semester_form_screen.dart';
 import 'screens/admin/semester_detail_screen.dart';
+import 'screens/admin/jadwal_kuliah_list_screen.dart';
+import 'screens/admin/jadwal_kuliah_form_screen.dart';
+import 'screens/admin/jadwal_kuliah_detail_screen.dart';
+import 'screens/admin/pengumuman_list_screen.dart' as admin_pengumuman;
+import 'screens/admin/pengumuman_form_screen.dart';
+import 'screens/admin/pengumuman_detail_screen.dart' as admin_pengumuman_detail;
+import 'screens/admin/payment_list_screen.dart';
+import 'screens/admin/payment_detail_screen.dart';
+import 'screens/admin/payment_statistics_screen.dart';
+import 'screens/dosen/qr_presensi_list_screen.dart';
+import 'screens/dosen/qr_presensi_generate_screen.dart';
+import 'screens/dosen/qr_presensi_show_screen.dart';
+import 'screens/mahasiswa/qr_presensi_scan_screen.dart';
 import 'screens/forum/forum_list_screen.dart';
 import 'screens/forum/forum_detail_screen.dart';
 import 'screens/forum/forum_create_screen.dart';
 import 'screens/qna/qna_list_screen.dart';
 import 'screens/qna/qna_detail_screen.dart';
 import 'screens/qna/qna_create_screen.dart';
+import 'screens/kalender/kalender_list_screen.dart';
+import 'screens/kalender/kalender_detail_screen.dart';
+import 'screens/admin/kalender_akademik_form_screen.dart';
+import 'screens/admin/system_settings_screen.dart';
+import 'screens/admin/laporan_pembayaran_screen.dart';
+import 'screens/admin/laporan_akademik_screen.dart';
+import 'screens/admin/statistik_presensi_screen.dart';
+import 'screens/admin/backup_screen.dart';
+import 'screens/admin/bank_screen.dart';
+import 'screens/admin/audit_log_screen.dart';
 import 'services/storage_service.dart';
 
 void main() {
@@ -371,6 +395,247 @@ final GoRouter _router = GoRouter(
         return SemesterFormScreen(semesterId: id);
       },
     ),
+    // Admin Semester CRUD routes
+    GoRoute(
+      path: '/admin/semester',
+      builder: (context, state) => const SemesterListScreen(),
+    ),
+    GoRoute(
+      path: '/admin/semester/create',
+      builder: (context, state) => const SemesterFormScreen(),
+    ),
+    GoRoute(
+      path: '/admin/semester/:id',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'];
+        if (idStr == null) {
+          return const Scaffold(
+            body: Center(child: Text('Semester ID tidak valid')),
+          );
+        }
+        final id = int.tryParse(idStr);
+        if (id == null) {
+          return const Scaffold(
+            body: Center(child: Text('Semester ID tidak valid')),
+          );
+        }
+        return SemesterDetailScreen(semesterId: id);
+      },
+    ),
+    GoRoute(
+      path: '/admin/semester/:id/edit',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'];
+        if (idStr == null) {
+          return const Scaffold(
+            body: Center(child: Text('Semester ID tidak valid')),
+          );
+        }
+        final id = int.tryParse(idStr);
+        if (id == null) {
+          return const Scaffold(
+            body: Center(child: Text('Semester ID tidak valid')),
+          );
+        }
+        return SemesterFormScreen(semesterId: id);
+      },
+    ),
+    // Admin Jadwal Kuliah CRUD routes
+    GoRoute(
+      path: '/admin/jadwal-kuliah',
+      builder: (context, state) => const JadwalKuliahListScreen(),
+    ),
+    GoRoute(
+      path: '/admin/jadwal-kuliah/create',
+      builder: (context, state) => const JadwalKuliahFormScreen(),
+    ),
+    GoRoute(
+      path: '/admin/jadwal-kuliah/:id',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'];
+        if (idStr == null) {
+          return const Scaffold(
+            body: Center(child: Text('Jadwal Kuliah ID tidak valid')),
+          );
+        }
+        final id = int.tryParse(idStr);
+        if (id == null) {
+          return const Scaffold(
+            body: Center(child: Text('Jadwal Kuliah ID tidak valid')),
+          );
+        }
+        return JadwalKuliahDetailScreen(jadwalKuliahId: id);
+      },
+    ),
+    GoRoute(
+      path: '/admin/jadwal-kuliah/:id/edit',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'];
+        if (idStr == null) {
+          return const Scaffold(
+            body: Center(child: Text('Jadwal Kuliah ID tidak valid')),
+          );
+        }
+        final id = int.tryParse(idStr);
+        if (id == null) {
+          return const Scaffold(
+            body: Center(child: Text('Jadwal Kuliah ID tidak valid')),
+          );
+        }
+        return JadwalKuliahFormScreen(jadwalKuliahId: id);
+      },
+    ),
+    // Admin Pengumuman Management routes
+    GoRoute(
+      path: '/admin/pengumuman',
+      builder: (context, state) =>
+          const admin_pengumuman.PengumumanListScreen(),
+    ),
+    GoRoute(
+      path: '/admin/pengumuman/create',
+      builder: (context, state) => const PengumumanFormScreen(),
+    ),
+    GoRoute(
+      path: '/admin/pengumuman/:id',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'];
+        if (idStr == null) {
+          return const Scaffold(
+            body: Center(child: Text('Pengumuman ID tidak valid')),
+          );
+        }
+        final id = int.tryParse(idStr);
+        if (id == null) {
+          return const Scaffold(
+            body: Center(child: Text('Pengumuman ID tidak valid')),
+          );
+        }
+        return admin_pengumuman_detail.PengumumanDetailScreen(pengumumanId: id);
+      },
+    ),
+    GoRoute(
+      path: '/admin/pengumuman/:id/edit',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'];
+        if (idStr == null) {
+          return const Scaffold(
+            body: Center(child: Text('Pengumuman ID tidak valid')),
+          );
+        }
+        final id = int.tryParse(idStr);
+        if (id == null) {
+          return const Scaffold(
+            body: Center(child: Text('Pengumuman ID tidak valid')),
+          );
+        }
+        return PengumumanFormScreen(pengumumanId: id);
+      },
+    ),
+    // Admin Payment Management routes
+    GoRoute(
+      path: '/admin/payment',
+      builder: (context, state) => const PaymentListScreen(),
+    ),
+    GoRoute(
+      path: '/admin/payment/statistics',
+      builder: (context, state) => const PaymentStatisticsScreen(),
+    ),
+    GoRoute(
+      path: '/admin/payment/:id',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'];
+        if (idStr == null) {
+          return const Scaffold(
+            body: Center(child: Text('Payment ID tidak valid')),
+          );
+        }
+        final id = int.tryParse(idStr);
+        if (id == null) {
+          return const Scaffold(
+            body: Center(child: Text('Payment ID tidak valid')),
+          );
+        }
+        return PaymentDetailScreen(paymentId: id);
+      },
+    ),
+    // Admin System Settings routes
+    GoRoute(
+      path: '/admin/system-settings',
+      builder: (context, state) => const SystemSettingsScreen(),
+    ),
+    // Admin Laporan routes
+    GoRoute(
+      path: '/admin/laporan/pembayaran',
+      builder: (context, state) => const LaporanPembayaranScreen(),
+    ),
+    GoRoute(
+      path: '/admin/laporan/akademik',
+      builder: (context, state) => const LaporanAkademikScreen(),
+    ),
+    GoRoute(
+      path: '/admin/statistik-presensi',
+      builder: (context, state) => const StatistikPresensiScreen(),
+    ),
+    // Admin Backup & Restore routes
+    GoRoute(
+      path: '/admin/backup',
+      builder: (context, state) => const BackupScreen(),
+    ),
+    // Admin Bank Management routes
+    GoRoute(
+      path: '/admin/bank',
+      builder: (context, state) => const BankScreen(),
+    ),
+    // Admin Audit Log routes
+    GoRoute(
+      path: '/admin/audit-log',
+      builder: (context, state) => const AuditLogScreen(),
+    ),
+    // Admin Kalender Akademik routes
+    GoRoute(
+      path: '/admin/kalender-akademik',
+      builder: (context, state) => const KalenderListScreen(),
+    ),
+    GoRoute(
+      path: '/admin/kalender-akademik/create',
+      builder: (context, state) => const KalenderAkademikFormScreen(),
+    ),
+    GoRoute(
+      path: '/admin/kalender-akademik/:id',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'];
+        if (idStr == null) {
+          return const Scaffold(
+            body: Center(child: Text('Event ID tidak valid')),
+          );
+        }
+        final id = int.tryParse(idStr);
+        if (id == null) {
+          return const Scaffold(
+            body: Center(child: Text('Event ID tidak valid')),
+          );
+        }
+        return KalenderDetailScreen(eventId: id);
+      },
+    ),
+    GoRoute(
+      path: '/admin/kalender-akademik/:id/edit',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'];
+        if (idStr == null) {
+          return const Scaffold(
+            body: Center(child: Text('Event ID tidak valid')),
+          );
+        }
+        final id = int.tryParse(idStr);
+        if (id == null) {
+          return const Scaffold(
+            body: Center(child: Text('Event ID tidak valid')),
+          );
+        }
+        return KalenderAkademikFormScreen(eventId: id);
+      },
+    ),
     GoRoute(
       path: '/dosen/dashboard',
       builder: (context, state) => const DosenDashboard(),
@@ -636,15 +901,49 @@ final GoRouter _router = GoRouter(
         return PresensiInputScreen(jadwalId: jadwalId);
       },
     ),
+    // Dosen QR Presensi routes
+    GoRoute(
+      path: '/dosen/qr-presensi',
+      builder: (context, state) => const QrPresensiListScreen(),
+    ),
+    GoRoute(
+      path: '/dosen/qr-presensi/generate/:jadwalId',
+      builder: (context, state) {
+        final jadwalIdStr = state.pathParameters['jadwalId'];
+        if (jadwalIdStr == null) {
+          return const Scaffold(
+            body: Center(child: Text('Jadwal ID tidak valid')),
+          );
+        }
+        final jadwalId = int.tryParse(jadwalIdStr);
+        if (jadwalId == null) {
+          return const Scaffold(
+            body: Center(child: Text('Jadwal ID tidak valid')),
+          );
+        }
+        return QrPresensiGenerateScreen(jadwalId: jadwalId);
+      },
+    ),
+    GoRoute(
+      path: '/dosen/qr-presensi/:token',
+      builder: (context, state) {
+        final token = state.pathParameters['token'];
+        if (token == null) {
+          return const Scaffold(body: Center(child: Text('Token tidak valid')));
+        }
+        return QrPresensiShowScreen(token: token);
+      },
+    ),
     // Notifikasi routes (for all roles)
     GoRoute(
       path: '/notifikasi',
       builder: (context, state) => const NotifikasiScreen(),
     ),
-    // Pengumuman routes (for all roles)
+    // Pengumuman routes (for all roles - public view)
     GoRoute(
       path: '/pengumuman',
-      builder: (context, state) => const PengumumanListScreen(),
+      builder: (context, state) =>
+          const pengumuman_public.PengumumanListScreen(),
     ),
     GoRoute(
       path: '/pengumuman/:id',
@@ -661,7 +960,9 @@ final GoRouter _router = GoRouter(
             body: Center(child: Text('Pengumuman ID tidak valid')),
           );
         }
-        return PengumumanDetailScreen(pengumumanId: id);
+        return pengumuman_public_detail.PengumumanDetailScreen(
+          pengumumanId: id,
+        );
       },
     ),
     // Chat routes (for all roles)
@@ -691,10 +992,10 @@ final GoRouter _router = GoRouter(
         return ChatDetailScreen(conversationId: id);
       },
     ),
-    // Payment routes (for all roles)
+    // Payment routes (for all roles - public view)
     GoRoute(
       path: '/payment',
-      builder: (context, state) => const PaymentListScreen(),
+      builder: (context, state) => const payment_public.PaymentListScreen(),
     ),
     GoRoute(
       path: '/payment/create',
@@ -715,7 +1016,7 @@ final GoRouter _router = GoRouter(
             body: Center(child: Text('Payment ID tidak valid')),
           );
         }
-        return PaymentDetailScreen(paymentId: id);
+        return payment_public_detail.PaymentDetailScreen(paymentId: id);
       },
     ),
     // Presensi Mahasiswa routes
@@ -740,6 +1041,34 @@ final GoRouter _router = GoRouter(
           );
         }
         return PresensiDetailScreen(jadwalId: id);
+      },
+    ),
+    // Mahasiswa QR Presensi routes
+    GoRoute(
+      path: '/mahasiswa/qr-presensi/scan',
+      builder: (context, state) => const QrPresensiScanScreen(),
+    ),
+    // Kalender Akademik routes (untuk semua role)
+    GoRoute(
+      path: '/kalender-akademik',
+      builder: (context, state) => const KalenderListScreen(),
+    ),
+    GoRoute(
+      path: '/kalender-akademik/:id',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'];
+        if (idStr == null) {
+          return const Scaffold(
+            body: Center(child: Text('Event ID tidak valid')),
+          );
+        }
+        final id = int.tryParse(idStr);
+        if (id == null) {
+          return const Scaffold(
+            body: Center(child: Text('Event ID tidak valid')),
+          );
+        }
+        return KalenderDetailScreen(eventId: id);
       },
     ),
     // Assignment Mahasiswa routes
