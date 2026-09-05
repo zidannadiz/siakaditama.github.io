@@ -60,7 +60,8 @@ class KRSController extends Controller
         $jadwal_available = JadwalKuliah::where('semester_id', $semester_aktif->id)
             ->where('status', 'aktif')
             ->whereHas('mataKuliah', function($query) use ($mahasiswa) {
-                $query->where('prodi_id', $mahasiswa->prodi_id);
+                $query->where('prodi_id', $mahasiswa->prodi_id)
+                      ->where('semester', $mahasiswa->semester); // Filter by student's semester
             })
             ->with(['mataKuliah', 'dosen'])
             ->get()
@@ -77,6 +78,9 @@ class KRSController extends Controller
         $jadwal_available = $jadwal_available->reject(function($jadwal) use ($krs_terambil) {
             return in_array($jadwal->id, $krs_terambil);
         });
+
+        // Pass mataKuliah mapping to view to match user instructions implicitly if they look for $mataKuliah
+        // But passing $jadwal_available is what the view needs.
 
         return view('mahasiswa.krs.create', compact('jadwal_available', 'semester_aktif', 'mahasiswa'));
     }
@@ -96,59 +100,72 @@ class KRSController extends Controller
                 ->with('error', 'Tidak ada semester aktif.');
         }
 
+        // Validate multiple checkboxes
         $validated = $request->validate([
-            'jadwal_kuliah_id' => 'required|exists:jadwal_kuliahs,id',
+            'jadwal_kuliah_id' => 'required|array|min:1',
+            'jadwal_kuliah_id.*' => 'exists:jadwal_kuliahs,id',
+        ], [
+            'jadwal_kuliah_id.required' => 'Pilih minimal satu mata kuliah untuk diambil.',
         ]);
 
-        // Cek apakah sudah pernah mengambil
-        $existing = KRS::where('mahasiswa_id', $mahasiswa->id)
-            ->where('jadwal_kuliah_id', $validated['jadwal_kuliah_id'])
-            ->where('semester_id', $semester_aktif->id)
-            ->first();
+        $berhasil = 0;
+        $ditolak = [];
 
-        if ($existing) {
-            return back()->with('error', 'Mata kuliah ini sudah pernah diambil.');
-        }
+        foreach ($validated['jadwal_kuliah_id'] as $id) {
+            // Cek apakah sudah pernah mengambil
+            $existing = KRS::where('mahasiswa_id', $mahasiswa->id)
+                ->where('jadwal_kuliah_id', $id)
+                ->where('semester_id', $semester_aktif->id)
+                ->first();
 
-        // Cek kuota
-        $jadwal = JadwalKuliah::with('mataKuliah')->findOrFail($validated['jadwal_kuliah_id']);
-        if ($jadwal->terisi >= $jadwal->kuota) {
-            return back()->with('error', 'Kuota kelas sudah penuh.');
-        }
-
-        $krs = KRS::create([
-            'mahasiswa_id' => $mahasiswa->id,
-            'jadwal_kuliah_id' => $validated['jadwal_kuliah_id'],
-            'semester_id' => $semester_aktif->id,
-            'status' => 'pending',
-        ]);
-
-        // Update terisi
-        $jadwal->increment('terisi');
-
-        // Kirim notifikasi ke admin
-        try {
-            $mataKuliah = $jadwal->mataKuliah;
-            $adminUsers = User::where('role', 'admin')->get();
-            
-            if ($adminUsers->count() > 0) {
-                $result = NotifikasiService::createForRole(
-                    'admin',
-                    'Pengajuan KRS Baru',
-                    "Mahasiswa {$mahasiswa->nama} ({$mahasiswa->nim}) mengajukan KRS untuk mata kuliah {$mataKuliah->nama_mk}.",
-                    'info',
-                    route('admin.krs.index')
-                );
-                \Log::info('KRS Notification created', ['result' => $result, 'admin_count' => $adminUsers->count()]);
-            } else {
-                \Log::warning('No admin users found to send KRS notification');
+            if ($existing) {
+                continue; // Skip jika sudah diambil
             }
-        } catch (\Exception $e) {
-            \Log::error('Error creating notification for KRS: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
+            // Cek kuota
+            $jadwal = JadwalKuliah::with('mataKuliah')->findOrFail($id);
+            if ($jadwal->terisi >= $jadwal->kuota) {
+                $ditolak[] = $jadwal->mataKuliah->nama_mk . ' (Penuh)';
+                continue;
+            }
+
+            // Create KRS
+            KRS::create([
+                'mahasiswa_id' => $mahasiswa->id,
+                'jadwal_kuliah_id' => $id,
+                'semester_id' => $semester_aktif->id,
+                'status' => 'pending',
+            ]);
+
+            // Update terisi
+            $jadwal->increment('terisi');
+            $berhasil++;
         }
 
-        return redirect()->route('mahasiswa.krs.index')
-            ->with('success', 'KRS berhasil ditambahkan. Menunggu persetujuan.');
+        // Notifikasi ke admin (satu kali)
+        if ($berhasil > 0) {
+            try {
+                $adminUsers = \App\Models\User::whereIn('role', ['admin', 'admin_pt'])->get();
+                if ($adminUsers->count() > 0) {
+                    \App\Helpers\NotifikasiService::createForRole(
+                        'admin_pt',
+                        'Pengajuan KRS Baru',
+                        "Mahasiswa {$mahasiswa->nama} ({$mahasiswa->nim}) mengajukan {$berhasil} mata kuliah baru.",
+                        'info',
+                        route('admin.krs.index')
+                    );
+                }
+            } catch (\Exception $e) {
+                \Log::error('Error creating notification for KRS: ' . $e->getMessage());
+            }
+        }
+
+        $message = "KRS berhasil diajukan ({$berhasil} mata kuliah). Menunggu persetujuan.";
+        if (count($ditolak) > 0) {
+            $message .= " Beberapa mata kuliah gagal ditambahkan: " . implode(', ', $ditolak);
+        }
+
+        return redirect()->route('mahasiswa.krs.index')->with('success', $message);
     }
 
     public function destroy(KRS $krs)
