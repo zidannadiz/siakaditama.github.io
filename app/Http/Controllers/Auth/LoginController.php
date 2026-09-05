@@ -47,10 +47,10 @@ class LoginController extends Controller
             }
             
             return match($user->role) {
-                'admin' => redirect()->route('admin.dashboard'),
+                'admin', 'admin_pt', 'admin_biku', 'admin_biak', 'kaprodi', 'admin_prodi' => redirect()->route('admin.dashboard'),
                 'dosen' => redirect()->route('dosen.dashboard'),
                 'mahasiswa' => redirect()->route('mahasiswa.dashboard'),
-                default => redirect()->route('dashboard'),
+                default => redirect()->route('login'),
             };
         }
 

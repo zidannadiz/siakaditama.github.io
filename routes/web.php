@@ -61,7 +61,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', function () {
         $role = auth()->user()->role;
         return match ($role) {
-            'admin' => redirect()->route('admin.dashboard'),
+            'admin', 'admin_pt', 'admin_biku', 'admin_biak', 'kaprodi', 'admin_prodi' => redirect()->route('admin.dashboard'),
             'dosen' => redirect()->route('dosen.dashboard'),
             'mahasiswa' => redirect()->route('mahasiswa.dashboard'),
             default => redirect()->route('login'),
@@ -77,7 +77,7 @@ Route::middleware(['auth'])->group(function () {
     })->name('session.check');
 
     // Admin routes
-    Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['role:admin,admin_pt,admin_biku,admin_biak,kaprodi,admin_prodi'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', AdminDashboardController::class)->name('dashboard');
         
         Route::resource('prodi', ProdiController::class);
