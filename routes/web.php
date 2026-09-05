@@ -230,6 +230,8 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:dosen'])->prefix('dosen')->name('dosen.')->group(function () {
         Route::get('/dashboard', DosenDashboardController::class)->name('dashboard');
         Route::get('/jadwal', [\App\Http\Controllers\Dosen\JadwalController::class, 'index'])->name('jadwal.index');
+        // D. KRS (View Only) — dosen hanya dapat melihat KRS mahasiswa di kelasnya
+        Route::get('/krs', [\App\Http\Controllers\Dosen\KRSController::class, 'index'])->name('krs.index');
         Route::get('/nilai', [NilaiController::class, 'index'])->name('nilai.index');
         Route::get('/nilai/create/{jadwal_id}', [NilaiController::class, 'create'])->name('nilai.create');
         Route::post('/nilai/{jadwal_id}', [NilaiController::class, 'store'])->name('nilai.store');
@@ -302,7 +304,8 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:mahasiswa'])->prefix('mahasiswa')->name('mahasiswa.')->group(function () {
         Route::get('/dashboard', MahasiswaDashboardController::class)->name('dashboard');
         Route::get('/jadwal', [\App\Http\Controllers\Mahasiswa\JadwalController::class, 'index'])->name('jadwal.index');
-        Route::resource('krs', KRSController::class)->except(['show', 'update']);
+        // D. KRS (View Only) — mahasiswa hanya dapat melihat KRS miliknya
+        Route::resource('krs', KRSController::class)->only(['index']);
         Route::get('/khs', [KHSController::class, 'index'])->name('khs.index');
         Route::get('/presensi', [MahasiswaPresensiController::class, 'index'])->name('presensi.index');
         
