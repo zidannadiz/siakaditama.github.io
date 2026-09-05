@@ -142,7 +142,7 @@
 
 <aside class="w-64 bg-white border-r border-gray-200">
     <nav class="p-4 space-y-1">
-        @if($role === 'admin')
+        @if(in_array($role, ['admin', 'admin_pt']))
             <a href="{{ route('admin.dashboard') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.dashboard') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
@@ -255,9 +255,9 @@
             
             {{-- HIDDEN admin.statistik-presensi --}}
             
-            <div class="pt-4">
+            {{-- <div class="pt-4">
                 <p class="px-4 text-xs font-semibold text-gray-500text-gray-400 uppercase tracking-wider">Laporan</p>
-            </div>
+            </div> --}}
             
             {{-- HIDDEN admin.laporan.pembayaran --}}
             
@@ -378,9 +378,19 @@
             {{-- HIDDEN mahasiswa.kalender-akademik --}}
             
             {{-- HIDDEN mahasiswa.statistik-keaktifan --}}
+        @elseif(in_array($role, ['admin_biak', 'admin_biku', 'kaprodi', 'admin_prodi']))
+            <a href="{{ route('admin.dashboard') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors bg-blue-50 text-blue-700">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+                <span class="font-medium">Dashboard</span>
+            </a>
+            <div class="p-3 my-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                Fitur untuk <b>{{ strtoupper(str_replace('_', ' ', $role)) }}</b> sedang disiapkan sesuai struktur baru.
+            </div>
         @endif
 
-        <!-- Komunikasi (untuk semua role) -->
+        {{-- <!-- Komunikasi (untuk semua role) - HIDDEN -->
         <div class="pt-4 mt-4 border-t border-gray-200">
             <p class="px-4 text-xs font-semibold text-gray-500text-gray-400 uppercase tracking-wider mb-1">Komunikasi</p>
             
@@ -391,17 +401,6 @@
                     </svg>
                     <span>Notifikasi</span>
                 </div>
-                @php
-                    // Variabel dari View Composer (AppServiceProvider)
-                    // Fallback jika View Composer tidak dipanggil
-                    if (!isset($unreadNotifCount)) {
-                        $unreadNotifikasis = auth()->user()->notifikasis()->where('is_read', false)->get();
-                        $unreadNotifCount = $unreadNotifikasis->count();
-                    }
-                @endphp
-                @if($unreadNotifCount > 0)
-                    <span class="rounded-full flex-shrink-0" style="width: 10px; height: 10px; background-color: #ff0000 !important; border: 2px solid white; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.3);"></span>
-                @endif
             </a>
             
             <a href="{{ route('chat.index') }}" class="flex items-center justify-between px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'chat') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
@@ -411,12 +410,6 @@
                     </svg>
                     <span>Pesan</span>
                 </div>
-                @php
-                    $unreadMessagesCount = auth()->user()->getUnreadMessagesCount();
-                @endphp
-                @if($unreadMessagesCount > 0)
-                    <span class="rounded-full flex-shrink-0" style="width: 10px; height: 10px; background-color: #ff0000 !important; border: 2px solid white; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.3);"></span>
-                @endif
             </a>
             
             <a href="{{ route('forum.index') }}" class="flex items-center justify-between px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'forum') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
@@ -426,15 +419,6 @@
                     </svg>
                     <span>Forum</span>
                 </div>
-                @php
-                    // Hitung forum posts baru (24 jam terakhir)
-                    $unreadForumCount = \App\Models\ForumPost::where('created_at', '>=', now()->subDay())
-                        ->where('user_id', '!=', auth()->id())
-                        ->count();
-                @endphp
-                @if($unreadForumCount > 0)
-                    <span class="rounded-full flex-shrink-0" style="width: 10px; height: 10px; background-color: #ff0000 !important; border: 2px solid white; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.3);"></span>
-                @endif
             </a>
             
             <a href="{{ route('qna.index') }}" class="flex items-center justify-between px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'qna') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
@@ -444,21 +428,8 @@
                     </svg>
                     <span>Tanya Jawab</span>
                 </div>
-                @php
-                    // Hitung questions atau answers baru (24 jam terakhir)
-                    $newQuestions = \App\Models\Question::where('created_at', '>=', now()->subDay())
-                        ->where('user_id', '!=', auth()->id())
-                        ->count();
-                    $newAnswers = \App\Models\Answer::where('created_at', '>=', now()->subDay())
-                        ->where('user_id', '!=', auth()->id())
-                        ->count();
-                    $unreadQnaCount = $newQuestions + $newAnswers;
-                @endphp
-                @if($unreadQnaCount > 0)
-                    <span class="rounded-full flex-shrink-0" style="width: 10px; height: 10px; background-color: #ff0000 !important; border: 2px solid white; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.3);"></span>
-                @endif
             </a>
-        </div>
+        </div> --}}
 
         <!-- Profil (untuk semua role) -->
         <div class="pt-4 mt-4 border-t border-gray-200">
