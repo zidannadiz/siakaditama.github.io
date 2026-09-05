@@ -104,7 +104,7 @@
         </div>
         @endif
 
-        @if(in_array(auth()->user()->role, ['admin_pt', 'admin_biku']))
+        @if(auth()->user()->role === 'admin_biku')
         <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <div class="flex items-center justify-between">
                 <div>

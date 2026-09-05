@@ -225,7 +225,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // 60 
             Route::post('/{krs}/reject', [AdminKRSController::class, 'reject']);
         });
 
-        Route::prefix('payment')->group(function () {
+        Route::middleware(['role:admin_biku'])->prefix('payment')->group(function () {
             Route::get('/', [\App\Http\Controllers\Api\Admin\PaymentController::class, 'index']);
             Route::get('/statistics', [\App\Http\Controllers\Api\Admin\PaymentController::class, 'statistics']);
             Route::get('/{payment}', [\App\Http\Controllers\Api\Admin\PaymentController::class, 'show']);

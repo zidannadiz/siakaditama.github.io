@@ -135,8 +135,8 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('pengumuman', PengumumanController::class);
         });
         
-        // Payment & Bank management (Hanya Admin PT & Admin BiKu)
-        Route::middleware(['role:admin_pt,admin_biku'])->group(function () {
+        // Payment & Bank management (Hanya Admin BiKu)
+        Route::middleware(['role:admin_biku'])->group(function () {
             Route::prefix('payment')->name('payment.')->group(function () {
                 Route::get('/', [\App\Http\Controllers\Admin\PaymentController::class, 'index'])->name('index');
                 Route::get('/{payment}', [\App\Http\Controllers\Admin\PaymentController::class, 'show'])->name('show');
@@ -199,8 +199,8 @@ Route::middleware(['auth'])->group(function () {
         
         // Laporan (Admin PT, Admin BiKu, Admin BiAk)
         Route::prefix('laporan')->name('laporan.')->group(function () {
-            // Laporan Pembayaran (Admin PT & Admin BiKu)
-            Route::middleware(['role:admin_pt,admin_biku'])->group(function () {
+            // Laporan Pembayaran (Hanya Admin BiKu)
+            Route::middleware(['role:admin_biku'])->group(function () {
                 Route::get('/pembayaran', [\App\Http\Controllers\Admin\LaporanPembayaranController::class, 'index'])->name('pembayaran.index');
                 Route::get('/pembayaran/export-excel', [\App\Http\Controllers\Admin\LaporanPembayaranController::class, 'exportExcel'])->name('pembayaran.export-excel');
                 Route::get('/pembayaran/export-pdf', [\App\Http\Controllers\Admin\LaporanPembayaranController::class, 'exportPdf'])->name('pembayaran.export-pdf');
