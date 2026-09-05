@@ -9,9 +9,11 @@
             <h1 class="text-3xl font-bold text-gray-900">Data Mahasiswa</h1>
             <p class="text-gray-600 mt-1">Kelola data mahasiswa</p>
         </div>
+        @if(auth()->user()->role !== 'kaprodi')
         <a href="{{ route('admin.mahasiswa.create') }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
             + Tambah Mahasiswa
         </a>
+        @endif
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -53,12 +55,16 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <a href="{{ route('admin.mahasiswa.edit', $mahasiswa) }}" class="text-blue-600 hover:text-blue-900 mr-3">Edit</a>
-                                <form action="{{ route('admin.mahasiswa.destroy', $mahasiswa) }}" method="POST" class="inline" id="delete-form-{{ $mahasiswa->id }}">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="button" onclick="if(window.showConfirmModal){window.showConfirmModal('Konfirmasi Hapus', 'Yakin ingin menghapus?', document.getElementById('delete-form-{{ $mahasiswa->id }}'))}else{alert('Modal tidak tersedia');}" class="text-red-600 hover:text-red-900" style="cursor: pointer;">Hapus</button>
-                                </form>
+                                @if(auth()->user()->role !== 'kaprodi')
+                                    <a href="{{ route('admin.mahasiswa.edit', $mahasiswa) }}" class="text-blue-600 hover:text-blue-900 mr-3">Edit</a>
+                                    <form action="{{ route('admin.mahasiswa.destroy', $mahasiswa) }}" method="POST" class="inline" id="delete-form-{{ $mahasiswa->id }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="button" onclick="if(window.showConfirmModal){window.showConfirmModal('Konfirmasi Hapus', 'Yakin ingin menghapus?', document.getElementById('delete-form-{{ $mahasiswa->id }}'))}else{alert('Modal tidak tersedia');}" class="text-red-600 hover:text-red-900" style="cursor: pointer;">Hapus</button>
+                                    </form>
+                                @else
+                                    <span class="text-gray-400 text-xs italic">Hanya Lihat</span>
+                                @endif
                             </td>
                         </tr>
                     @empty

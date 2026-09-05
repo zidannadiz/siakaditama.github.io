@@ -17,7 +17,16 @@ class MahasiswaDashboardController extends Controller
         $mahasiswa = Mahasiswa::where('user_id', Auth::id())->first();
         
         if (!$mahasiswa) {
-            abort(404, 'Data mahasiswa tidak ditemukan');
+            $defaultProdi = \App\Models\Prodi::first();
+            $mahasiswa = Mahasiswa::create([
+                'user_id' => Auth::id(),
+                'nim' => '220100010',
+                'nama' => Auth::user()->name,
+                'prodi_id' => Auth::user()->prodi_id ?? $defaultProdi?->id,
+                'jenis_kelamin' => 'L',
+                'semester' => 1,
+                'status' => 'aktif',
+            ]);
         }
 
         $semester_aktif = \App\Models\Semester::where('status', 'aktif')->first();

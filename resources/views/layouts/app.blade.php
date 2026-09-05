@@ -189,6 +189,24 @@
                             </div>
                         @endif
 
+                        @if($errors->any())
+                            <div class="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-semibold text-sm">Gagal Menyimpan Data:</span>
+                                    <button onclick="this.parentElement.parentElement.remove()" class="text-red-600 hover:text-red-800">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <ul class="list-disc list-inside text-sm space-y-1">
+                                    @foreach($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
                         @yield('content')
                     </div>
                 </div>

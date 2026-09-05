@@ -22,11 +22,11 @@ class TahunAjaranController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nama'            => 'required|string|max:20|unique:tahun_ajarans',
+            'nama'            => 'required|string|max:50|unique:tahun_ajarans,nama',
             'tahun_mulai'     => 'required|digits:4|integer',
             'tahun_selesai'   => 'required|digits:4|integer|gt:tahun_mulai',
-            'tanggal_mulai'   => 'required|date',
-            'tanggal_selesai' => 'required|date|after:tanggal_mulai',
+            'tanggal_mulai'   => 'nullable|date',
+            'tanggal_selesai' => 'nullable|date|after_or_equal:tanggal_mulai',
             'status'          => 'required|in:aktif,nonaktif',
             'keterangan'      => 'nullable|string',
         ]);
@@ -56,11 +56,11 @@ class TahunAjaranController extends Controller
     public function update(Request $request, TahunAjaran $tahunAjaran)
     {
         $validated = $request->validate([
-            'nama'            => 'required|string|max:20|unique:tahun_ajarans,nama,' . $tahunAjaran->id,
+            'nama'            => 'required|string|max:50|unique:tahun_ajarans,nama,' . $tahunAjaran->id,
             'tahun_mulai'     => 'required|digits:4|integer',
             'tahun_selesai'   => 'required|digits:4|integer|gt:tahun_mulai',
-            'tanggal_mulai'   => 'required|date',
-            'tanggal_selesai' => 'required|date|after:tanggal_mulai',
+            'tanggal_mulai'   => 'nullable|date',
+            'tanggal_selesai' => 'nullable|date|after_or_equal:tanggal_mulai',
             'status'          => 'required|in:aktif,nonaktif',
             'keterangan'      => 'nullable|string',
         ]);

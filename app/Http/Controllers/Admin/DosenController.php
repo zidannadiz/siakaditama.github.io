@@ -27,6 +27,10 @@ class DosenController extends Controller
 
     public function create()
     {
+        if (auth()->user()->role === 'kaprodi') {
+            abort(403, 'Kaprodi hanya memiliki hak akses melihat data Dosen.');
+        }
+
         $prodis = auth()->user()->isAdminProdi()
             ? \App\Models\Prodi::where('id', auth()->user()->prodi_id)->get()
             : \App\Models\Prodi::orderBy('nama_prodi')->get();
@@ -36,6 +40,10 @@ class DosenController extends Controller
 
     public function store(Request $request)
     {
+        if (auth()->user()->role === 'kaprodi') {
+            abort(403, 'Kaprodi hanya memiliki hak akses melihat data Dosen.');
+        }
+
         if (auth()->user()->isAdminProdi() && $request->prodi_id != auth()->user()->prodi_id) {
             abort(403, 'Anda hanya bisa menambahkan dosen di prodi Anda sendiri.');
         }
@@ -87,6 +95,10 @@ class DosenController extends Controller
 
     public function edit(Dosen $dosen)
     {
+        if (auth()->user()->role === 'kaprodi') {
+            abort(403, 'Kaprodi hanya memiliki hak akses melihat data Dosen.');
+        }
+
         $this->authorizeProdi($dosen);
         $dosen->load(['user', 'prodi']);
         $prodis = auth()->user()->isAdminProdi()
@@ -98,6 +110,10 @@ class DosenController extends Controller
 
     public function update(Request $request, Dosen $dosen)
     {
+        if (auth()->user()->role === 'kaprodi') {
+            abort(403, 'Kaprodi hanya memiliki hak akses melihat data Dosen.');
+        }
+
         $this->authorizeProdi($dosen);
         
         if (auth()->user()->isAdminProdi() && $request->prodi_id != auth()->user()->prodi_id) {
@@ -158,6 +174,10 @@ class DosenController extends Controller
 
     public function destroy(Dosen $dosen)
     {
+        if (auth()->user()->role === 'kaprodi') {
+            abort(403, 'Kaprodi hanya memiliki hak akses melihat data Dosen.');
+        }
+
         $this->authorizeProdi($dosen);
         
         $dosenData = $dosen->toArray();

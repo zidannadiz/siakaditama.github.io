@@ -11,7 +11,8 @@
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+        @if(in_array(auth()->user()->role, ['admin_pt', 'admin_biak', 'kaprodi', 'admin_prodi']))
         <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <div class="flex items-center justify-between">
                 <div>
@@ -39,7 +40,9 @@
                 </div>
             </div>
         </div>
+        @endif
 
+        @if(in_array(auth()->user()->role, ['admin_pt', 'kaprodi', 'admin_prodi']))
         <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <div class="flex items-center justify-between">
                 <div>
@@ -53,7 +56,9 @@
                 </div>
             </div>
         </div>
+        @endif
 
+        @if(in_array(auth()->user()->role, ['admin_pt', 'admin_prodi']))
         <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <div class="flex items-center justify-between">
                 <div>
@@ -67,7 +72,9 @@
                 </div>
             </div>
         </div>
+        @endif
 
+        @if(in_array(auth()->user()->role, ['admin_pt', 'kaprodi', 'admin_prodi']))
         <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <div class="flex items-center justify-between">
                 <div>
@@ -82,6 +89,22 @@
             </div>
         </div>
 
+        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">KRS Disetujui</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ $stats['krs_approved'] }}</p>
+                </div>
+                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+        @endif
+
+        @if(in_array(auth()->user()->role, ['admin_pt', 'admin_biku']))
         <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <div class="flex items-center justify-between">
                 <div>
@@ -111,21 +134,9 @@
                 </div>
             </div>
         </div>
+        @endif
 
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-600">KRS Disetujui</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ $stats['krs_approved'] }}</p>
-                </div>
-                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </div>
-            </div>
-        </div>
-
+        @if(in_array(auth()->user()->role, ['admin_pt', 'kaprodi', 'admin_prodi', 'admin_biak']))
         <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <div class="flex items-center justify-between">
                 <div>
@@ -139,6 +150,7 @@
                 </div>
             </div>
         </div>
+        @endif
     </div>
 
     <!-- Charts Section -->

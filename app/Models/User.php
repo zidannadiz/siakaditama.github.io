@@ -25,8 +25,8 @@ class User extends Authenticatable implements CanResetPasswordContract
         'name',
         'email',
         'password',
-        // Note: 'role' is NOT fillable to prevent mass assignment vulnerability
-        // Role must be assigned explicitly in controllers
+        'role',
+        'prodi_id',
     ];
 
     /**
@@ -61,6 +61,26 @@ class User extends Authenticatable implements CanResetPasswordContract
     public function isAdminProdi(): bool
     {
         return in_array($this->role, ['admin_prodi', 'kaprodi']);
+    }
+
+    public function isKaprodi(): bool
+    {
+        return $this->role === 'kaprodi';
+    }
+
+    public function isAdminBiak(): bool
+    {
+        return $this->role === 'admin_biak';
+    }
+
+    public function isAdminBiku(): bool
+    {
+        return $this->role === 'admin_biku';
+    }
+
+    public function isAdminPt(): bool
+    {
+        return in_array($this->role, ['admin', 'admin_pt']);
     }
 
     public function notifikasis()

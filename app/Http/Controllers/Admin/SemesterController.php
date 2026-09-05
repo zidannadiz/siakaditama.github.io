@@ -35,6 +35,11 @@ class SemesterController extends Controller
             Semester::where('status', 'aktif')->update(['status' => 'nonaktif']);
         }
 
+        // Otomatis hubungkan ke Tahun Ajaran aktif jika ada
+        if (empty($validated['tahun_ajaran_id']) && $activeTa = \App\Models\TahunAjaran::getAktif()) {
+            $validated['tahun_ajaran_id'] = $activeTa->id;
+        }
+
         Semester::create($validated);
 
         return redirect()->route('admin.semester.index')

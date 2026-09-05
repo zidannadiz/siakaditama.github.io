@@ -23,14 +23,22 @@ class AdminSeeder extends Seeder
             'mahasiswa' => 'Mahasiswa',
         ];
 
+        $defaultProdi = \App\Models\Prodi::firstOrCreate(
+            ['kode_prodi' => 'SI'],
+            ['nama_prodi' => 'Sistem Informasi', 'deskripsi' => 'Program Studi Sistem Informasi']
+        );
+
         foreach ($roles as $role => $name) {
-            User::create([
-                'name' => $name,
-                'email' => $role . '@siakad.com',
-                'password' => Hash::make('password'),
-                'role' => $role,
-            ]);
-            $this->command->info("User $name created successfully! Email: $role@siakad.com | Password: password");
+            User::firstOrCreate(
+                ['email' => $role . '@siakad.com'],
+                [
+                    'name' => $name,
+                    'password' => Hash::make('password'),
+                    'role' => $role,
+                    'prodi_id' => in_array($role, ['kaprodi', 'admin_prodi']) ? $defaultProdi->id : null,
+                ]
+            );
+            $this->command->info("User $name ready! Email: $role@siakad.com | Password: password");
         }
     }
 }

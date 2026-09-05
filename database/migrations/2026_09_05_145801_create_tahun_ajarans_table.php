@@ -16,8 +16,8 @@ return new class extends Migration
             $table->string('nama'); // e.g. "2024/2025"
             $table->year('tahun_mulai');
             $table->year('tahun_selesai');
-            $table->date('tanggal_mulai');
-            $table->date('tanggal_selesai');
+            $table->date('tanggal_mulai')->nullable();
+            $table->date('tanggal_selesai')->nullable();
             $table->enum('status', ['aktif', 'nonaktif'])->default('nonaktif');
             $table->text('keterangan')->nullable();
             $table->timestamps();

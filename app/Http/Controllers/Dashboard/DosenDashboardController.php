@@ -17,7 +17,16 @@ class DosenDashboardController extends Controller
         $dosen = Dosen::where('user_id', Auth::id())->first();
         
         if (!$dosen) {
-            abort(404, 'Data dosen tidak ditemukan');
+            $defaultProdi = \App\Models\Prodi::first();
+            $dosen = Dosen::create([
+                'user_id' => Auth::id(),
+                'nidn' => '07' . rand(10000000, 99999999),
+                'nama' => Auth::user()->name,
+                'jenis_kelamin' => 'L',
+                'email' => Auth::user()->email,
+                'prodi_id' => Auth::user()->prodi_id ?? $defaultProdi?->id,
+                'status' => 'aktif',
+            ]);
         }
 
         $jadwal_hari_ini = JadwalKuliah::where('dosen_id', $dosen->id)

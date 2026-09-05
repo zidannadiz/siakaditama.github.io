@@ -30,6 +30,10 @@ class MahasiswaController extends Controller
 
     public function create()
     {
+        if (auth()->user()->role === 'kaprodi') {
+            abort(403, 'Kaprodi hanya memiliki hak akses melihat data Mahasiswa.');
+        }
+
         $prodis = auth()->user()->isAdminProdi()
             ? Prodi::where('id', auth()->user()->prodi_id)->get()
             : Prodi::all();
@@ -39,6 +43,10 @@ class MahasiswaController extends Controller
 
     public function store(Request $request)
     {
+        if (auth()->user()->role === 'kaprodi') {
+            abort(403, 'Kaprodi hanya memiliki hak akses melihat data Mahasiswa.');
+        }
+
         if (auth()->user()->isAdminProdi() && $request->prodi_id != auth()->user()->prodi_id) {
             abort(403, 'Anda hanya bisa menambahkan mahasiswa di prodi Anda sendiri.');
         }
@@ -114,6 +122,10 @@ class MahasiswaController extends Controller
 
     public function edit(Mahasiswa $mahasiswa)
     {
+        if (auth()->user()->role === 'kaprodi') {
+            abort(403, 'Kaprodi hanya memiliki hak akses melihat data Mahasiswa.');
+        }
+
         $this->authorizeProdi($mahasiswa);
         
         $mahasiswa->load(['prodi', 'user']);
@@ -126,6 +138,10 @@ class MahasiswaController extends Controller
 
     public function update(Request $request, Mahasiswa $mahasiswa)
     {
+        if (auth()->user()->role === 'kaprodi') {
+            abort(403, 'Kaprodi hanya memiliki hak akses melihat data Mahasiswa.');
+        }
+
         $this->authorizeProdi($mahasiswa);
         
         if (auth()->user()->isAdminProdi() && $request->prodi_id != auth()->user()->prodi_id) {
@@ -187,6 +203,10 @@ class MahasiswaController extends Controller
 
     public function destroy(Mahasiswa $mahasiswa)
     {
+        if (auth()->user()->role === 'kaprodi') {
+            abort(403, 'Kaprodi hanya memiliki hak akses melihat data Mahasiswa.');
+        }
+
         $this->authorizeProdi($mahasiswa);
         
         $mahasiswaData = $mahasiswa->toArray();

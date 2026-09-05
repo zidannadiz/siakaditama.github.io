@@ -88,26 +88,46 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('admin', AdminController::class)->except(['show']);
         });
 
-        // M. Prodi, M. Tahun Ajaran, M. Semester -> Admin PT, Admin BiAk, Kaprodi, Admin Prodi
-        Route::middleware(['role:admin_pt,admin_biak,kaprodi,admin_prodi'])->group(function () {
+        // M. Prodi -> Admin PT (CRUD), Admin BiAk (CRUD), Kaprodi (View)
+        Route::middleware(['role:admin_pt,admin_biak,kaprodi'])->group(function () {
             Route::resource('prodi', ProdiController::class);
+        });
+
+        // M. Semester & Tahun Ajaran -> Admin PT (CRUD), Admin BiAk (CRUD)
+        Route::middleware(['role:admin_pt,admin_biak'])->group(function () {
             Route::resource('semester', SemesterController::class);
             Route::resource('tahun-ajaran', TahunAjaranController::class);
         });
 
-        // M. Mahasiswa, M. Dosen, M. Mata Kuliah, M. Kurikulum, D. Jadwal Kuliah, D. KRS -> Admin PT, Kaprodi, Admin Prodi
-        Route::middleware(['role:admin_pt,kaprodi,admin_prodi'])->group(function () {
+        // M. Mahasiswa & M. Dosen -> Admin PT (CRUD), Admin BiAk (CRUD), Kaprodi (View), Admin Prodi (CRUD)
+        Route::middleware(['role:admin_pt,admin_biak,kaprodi,admin_prodi'])->group(function () {
             Route::resource('mahasiswa', MahasiswaController::class);
             Route::resource('dosen', DosenController::class);
+        });
+
+        // M. Mata Kuliah & Kurikulum -> Admin PT (CRUD), Kaprodi (CRUD), Admin Prodi (CRUD)
+        Route::middleware(['role:admin_pt,kaprodi,admin_prodi'])->group(function () {
             Route::resource('mata-kuliah', MataKuliahController::class);
-            Route::resource('jadwal-kuliah', JadwalKuliahController::class);
             Route::resource('kurikulum', KurikulumController::class);
             Route::post('/kurikulum/{kurikulum}/detail', [KurikulumController::class, 'addDetail'])->name('kurikulum.detail.add');
             Route::delete('/kurikulum/{kurikulum}/detail/{detail}', [KurikulumController::class, 'removeDetail'])->name('kurikulum.detail.remove');
-            
+        });
+
+        // D. Jadwal Kuliah -> Admin PT (CRUD), Admin Prodi (CRUD)
+        Route::middleware(['role:admin_pt,admin_prodi'])->group(function () {
+            Route::resource('jadwal-kuliah', JadwalKuliahController::class);
+        });
+
+        // D. KRS -> Admin PT (CRUD), Kaprodi (View), Admin Prodi (CRUD)
+        Route::middleware(['role:admin_pt,kaprodi,admin_prodi'])->group(function () {
             Route::get('/krs', [AdminKRSController::class, 'index'])->name('krs.index');
             Route::post('/krs/{krs}/approve', [AdminKRSController::class, 'approve'])->name('krs.approve');
             Route::post('/krs/{krs}/reject', [AdminKRSController::class, 'reject'])->name('krs.reject');
+        });
+
+        // D. Nilai (Rekap Nilai) -> Kaprodi (View), Admin PT
+        Route::middleware(['role:admin_pt,kaprodi'])->group(function () {
+            Route::get('/rekap-nilai', [\App\Http\Controllers\Admin\RekapNilaiController::class, 'index'])->name('rekap-nilai.index');
         });
 
         // Pengumuman (Umum untuk PT & Akademik)
@@ -115,21 +135,22 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('pengumuman', PengumumanController::class);
         });
         
-        // Payment management
-        Route::prefix('payment')->name('payment.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\PaymentController::class, 'index'])->name('index');
-            Route::get('/{payment}', [\App\Http\Controllers\Admin\PaymentController::class, 'show'])->name('show');
-            Route::post('/{payment}/verify', [\App\Http\Controllers\Admin\PaymentController::class, 'verify'])->name('verify');
-            Route::post('/{payment}/cancel', [\App\Http\Controllers\Admin\PaymentController::class, 'cancel'])->name('cancel');
-            Route::get('/statistics', [\App\Http\Controllers\Admin\PaymentController::class, 'statistics'])->name('statistics');
-        });
-        
-        // Bank management
-        Route::prefix('bank')->name('bank.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\BankController::class, 'index'])->name('index');
-            Route::get('/{bank}/edit', [\App\Http\Controllers\Admin\BankController::class, 'edit'])->name('edit');
-            Route::put('/{bank}', [\App\Http\Controllers\Admin\BankController::class, 'update'])->name('update');
-            Route::post('/{bank}/toggle-status', [\App\Http\Controllers\Admin\BankController::class, 'toggleStatus'])->name('toggle-status');
+        // Payment & Bank management (Hanya Admin PT & Admin BiKu)
+        Route::middleware(['role:admin_pt,admin_biku'])->group(function () {
+            Route::prefix('payment')->name('payment.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\PaymentController::class, 'index'])->name('index');
+                Route::get('/{payment}', [\App\Http\Controllers\Admin\PaymentController::class, 'show'])->name('show');
+                Route::post('/{payment}/verify', [\App\Http\Controllers\Admin\PaymentController::class, 'verify'])->name('verify');
+                Route::post('/{payment}/cancel', [\App\Http\Controllers\Admin\PaymentController::class, 'cancel'])->name('cancel');
+                Route::get('/statistics', [\App\Http\Controllers\Admin\PaymentController::class, 'statistics'])->name('statistics');
+            });
+            
+            Route::prefix('bank')->name('bank.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\BankController::class, 'index'])->name('index');
+                Route::get('/{bank}/edit', [\App\Http\Controllers\Admin\BankController::class, 'edit'])->name('edit');
+                Route::put('/{bank}', [\App\Http\Controllers\Admin\BankController::class, 'update'])->name('update');
+                Route::post('/{bank}/toggle-status', [\App\Http\Controllers\Admin\BankController::class, 'toggleStatus'])->name('toggle-status');
+            });
         });
         
         // Backup & Restore
@@ -170,24 +191,28 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/{templateKrsKh}/download', [TemplateKrsKhsController::class, 'download'])->name('download');
         });
         
-        // Generate KRS/KHS (for admin)
-        Route::prefix('generate-krs-khs')->name('generate-krs-khs.')->group(function () {
+        // Generate KRS/KHS (Admin PT & Admin Prodi per matrix D. KHS)
+        Route::middleware(['role:admin_pt,admin_prodi'])->prefix('generate-krs-khs')->name('generate-krs-khs.')->group(function () {
             Route::get('/', [GenerateKrsKhsController::class, 'showForm'])->name('index');
             Route::post('/generate', [GenerateKrsKhsController::class, 'generate'])->name('generate');
         });
         
-        // Laporan
+        // Laporan (Admin PT, Admin BiKu, Admin BiAk)
         Route::prefix('laporan')->name('laporan.')->group(function () {
-            // Laporan Pembayaran
-            Route::get('/pembayaran', [\App\Http\Controllers\Admin\LaporanPembayaranController::class, 'index'])->name('pembayaran.index');
-            Route::get('/pembayaran/export-excel', [\App\Http\Controllers\Admin\LaporanPembayaranController::class, 'exportExcel'])->name('pembayaran.export-excel');
-            Route::get('/pembayaran/export-pdf', [\App\Http\Controllers\Admin\LaporanPembayaranController::class, 'exportPdf'])->name('pembayaran.export-pdf');
+            // Laporan Pembayaran (Admin PT & Admin BiKu)
+            Route::middleware(['role:admin_pt,admin_biku'])->group(function () {
+                Route::get('/pembayaran', [\App\Http\Controllers\Admin\LaporanPembayaranController::class, 'index'])->name('pembayaran.index');
+                Route::get('/pembayaran/export-excel', [\App\Http\Controllers\Admin\LaporanPembayaranController::class, 'exportExcel'])->name('pembayaran.export-excel');
+                Route::get('/pembayaran/export-pdf', [\App\Http\Controllers\Admin\LaporanPembayaranController::class, 'exportPdf'])->name('pembayaran.export-pdf');
+            });
             
-            // Laporan Akademik
-            Route::get('/akademik', [\App\Http\Controllers\Admin\LaporanAkademikController::class, 'index'])->name('akademik.index');
-            Route::get('/akademik/export-excel', [\App\Http\Controllers\Admin\LaporanAkademikController::class, 'exportExcel'])->name('akademik.export-excel');
-            Route::get('/akademik/export-pdf', [\App\Http\Controllers\Admin\LaporanAkademikController::class, 'exportPdf'])->name('akademik.export-pdf');
-            Route::get('/akademik/presensi', [\App\Http\Controllers\Admin\LaporanAkademikController::class, 'statistikPresensi'])->name('akademik.presensi');
+            // Laporan Akademik (Admin PT & Admin BiAk)
+            Route::middleware(['role:admin_pt,admin_biak'])->group(function () {
+                Route::get('/akademik', [\App\Http\Controllers\Admin\LaporanAkademikController::class, 'index'])->name('akademik.index');
+                Route::get('/akademik/export-excel', [\App\Http\Controllers\Admin\LaporanAkademikController::class, 'exportExcel'])->name('akademik.export-excel');
+                Route::get('/akademik/export-pdf', [\App\Http\Controllers\Admin\LaporanAkademikController::class, 'exportPdf'])->name('akademik.export-pdf');
+                Route::get('/akademik/presensi', [\App\Http\Controllers\Admin\LaporanAkademikController::class, 'statistikPresensi'])->name('akademik.presensi');
+            });
         });
         
         // Statistik Presensi
@@ -204,6 +229,7 @@ Route::middleware(['auth'])->group(function () {
     // Dosen routes
     Route::middleware(['role:dosen'])->prefix('dosen')->name('dosen.')->group(function () {
         Route::get('/dashboard', DosenDashboardController::class)->name('dashboard');
+        Route::get('/jadwal', [\App\Http\Controllers\Dosen\JadwalController::class, 'index'])->name('jadwal.index');
         Route::get('/nilai', [NilaiController::class, 'index'])->name('nilai.index');
         Route::get('/nilai/create/{jadwal_id}', [NilaiController::class, 'create'])->name('nilai.create');
         Route::post('/nilai/{jadwal_id}', [NilaiController::class, 'store'])->name('nilai.store');
@@ -275,6 +301,7 @@ Route::middleware(['auth'])->group(function () {
     // Mahasiswa routes
     Route::middleware(['role:mahasiswa'])->prefix('mahasiswa')->name('mahasiswa.')->group(function () {
         Route::get('/dashboard', MahasiswaDashboardController::class)->name('dashboard');
+        Route::get('/jadwal', [\App\Http\Controllers\Mahasiswa\JadwalController::class, 'index'])->name('jadwal.index');
         Route::resource('krs', KRSController::class)->except(['show', 'update']);
         Route::get('/khs', [KHSController::class, 'index'])->name('khs.index');
         Route::get('/presensi', [MahasiswaPresensiController::class, 'index'])->name('presensi.index');

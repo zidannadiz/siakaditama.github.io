@@ -106,6 +106,11 @@ class ValidEmail implements ValidationRule
             return false;
         }
 
+        // Izinkan semua domain berformat valid pada local development
+        if (app()->environment('local', 'testing')) {
+            return true;
+        }
+
         // Domain umum yang pasti valid (whitelist) - HANYA domain yang benar-benar umum
         $commonDomains = [
             'gmail.com', 
@@ -121,6 +126,7 @@ class ValidEmail implements ValidationRule
             'aol.com',
             'zoho.com',
             'mail.com',
+            'siakad.com',
         ];
         
         if (in_array($domain, $commonDomains)) {

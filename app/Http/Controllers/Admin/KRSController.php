@@ -27,6 +27,10 @@ class KRSController extends Controller
 
     public function approve(KRS $krs)
     {
+        if (auth()->user()->role === 'kaprodi') {
+            abort(403, 'Kaprodi hanya memiliki hak akses melihat data KRS.');
+        }
+
         $this->authorizeProdi($krs);
         
         $oldStatus = $krs->status;
@@ -56,6 +60,10 @@ class KRSController extends Controller
 
     public function reject(Request $request, KRS $krs)
     {
+        if (auth()->user()->role === 'kaprodi') {
+            abort(403, 'Kaprodi hanya memiliki hak akses melihat data KRS.');
+        }
+
         $this->authorizeProdi($krs);
         
         $validated = $request->validate([

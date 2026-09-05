@@ -21,13 +21,28 @@ class AdminDashboardController extends Controller
 {
     public function __invoke()
     {
+        $user = auth()->user();
+        $isProdi = $user->isAdminProdi() && $user->prodi_id;
+
         $stats = [
-            'total_mahasiswa' => Mahasiswa::where('status', 'aktif')->count(),
-            'total_dosen' => Dosen::where('status', 'aktif')->count(),
-            'total_mata_kuliah' => MataKuliah::count(),
-            'total_jadwal' => JadwalKuliah::where('status', 'aktif')->count(),
-            'krs_pending' => KRS::where('status', 'pending')->count(),
-            'krs_approved' => KRS::where('status', 'disetujui')->count(),
+            'total_mahasiswa' => Mahasiswa::where('status', 'aktif')
+                ->when($isProdi, fn($q) => $q->where('prodi_id', $user->prodi_id))
+                ->count(),
+            'total_dosen' => Dosen::where('status', 'aktif')
+                ->when($isProdi, fn($q) => $q->where('prodi_id', $user->prodi_id))
+                ->count(),
+            'total_mata_kuliah' => MataKuliah::query()
+                ->when($isProdi, fn($q) => $q->where('prodi_id', $user->prodi_id))
+                ->count(),
+            'total_jadwal' => JadwalKuliah::where('status', 'aktif')
+                ->when($isProdi, fn($q) => $q->whereHas('mataKuliah', fn($mq) => $mq->where('prodi_id', $user->prodi_id)))
+                ->count(),
+            'krs_pending' => KRS::where('status', 'pending')
+                ->when($isProdi, fn($q) => $q->whereHas('mahasiswa', fn($mq) => $mq->where('prodi_id', $user->prodi_id)))
+                ->count(),
+            'krs_approved' => KRS::where('status', 'disetujui')
+                ->when($isProdi, fn($q) => $q->whereHas('mahasiswa', fn($mq) => $mq->where('prodi_id', $user->prodi_id)))
+                ->count(),
             'total_presensi' => Presensi::count(),
             'total_payment' => Payment::count(),
             'payment_pending' => Payment::where('status', 'pending')->count(),
@@ -36,14 +51,15 @@ class AdminDashboardController extends Controller
         ];
 
         // Grafik Mahasiswa per Prodi
-        $mahasiswa_per_prodi = Prodi::withCount(['mahasiswas' => function($query) {
-            $query->where('status', 'aktif');
-        }])->get()->map(function($prodi) {
-            return [
-                'label' => $prodi->nama_prodi,
-                'value' => $prodi->mahasiswas_count
-            ];
-        });
+        $mahasiswa_per_prodi = Prodi::when($isProdi, fn($q) => $q->where('id', $user->prodi_id))
+            ->withCount(['mahasiswas' => function($query) {
+                $query->where('status', 'aktif');
+            }])->get()->map(function($prodi) {
+                return [
+                    'label' => $prodi->nama_prodi,
+                    'value' => $prodi->mahasiswas_count
+                ];
+            });
 
         // Grafik KRS per Semester
         $krs_per_semester = Semester::withCount('krs')

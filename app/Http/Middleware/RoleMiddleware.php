@@ -36,8 +36,7 @@ class RoleMiddleware
 
         $userRole = auth()->user()->role;
 
-        // Kadang Laravel mengirimkan parameter middleware berupa satu string dengan koma, atau array of strings.
-        // Kita flatten dan explode semuanya untuk memastikan semua role diparsing dengan benar.
+        // Flatten dan explode parameter middleware untuk antisipasi passing string koma maupun array
         $parsedRoles = [];
         foreach ($roles as $roleGroup) {
             $parsedRoles = array_merge($parsedRoles, explode(',', $roleGroup));

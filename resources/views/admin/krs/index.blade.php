@@ -42,7 +42,9 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                @if($krs->status === 'pending')
+                                @if(auth()->user()->role === 'kaprodi')
+                                    <span class="text-gray-400 text-xs italic">Hanya Lihat</span>
+                                @elseif($krs->status === 'pending')
                                     <form action="{{ route('admin.krs.approve', $krs) }}" method="POST" class="inline">
                                         @csrf
                                         <button type="submit" class="text-green-600 hover:text-green-900">Setujui</button>
@@ -51,6 +53,8 @@
                                         @csrf
                                         <button type="submit" class="text-red-600 hover:text-red-900">Tolak</button>
                                     </form>
+                                @else
+                                    <span class="text-gray-400 text-xs">-</span>
                                 @endif
                             </td>
                         </tr>
