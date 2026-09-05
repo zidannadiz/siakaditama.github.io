@@ -36,7 +36,14 @@ class RoleMiddleware
 
         $userRole = auth()->user()->role;
 
-        if (!in_array($userRole, $roles)) {
+        // Kadang Laravel mengirimkan parameter middleware berupa satu string dengan koma, atau array of strings.
+        // Kita flatten dan explode semuanya untuk memastikan semua role diparsing dengan benar.
+        $parsedRoles = [];
+        foreach ($roles as $roleGroup) {
+            $parsedRoles = array_merge($parsedRoles, explode(',', $roleGroup));
+        }
+
+        if (!in_array($userRole, $parsedRoles)) {
             abort(403, 'Unauthorized access.');
         }
 
