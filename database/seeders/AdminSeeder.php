@@ -13,16 +13,25 @@ class AdminSeeder extends Seeder
      */
     public function run(): void
     {
-        User::create([
-            'name' => 'Admin',
-            'email' => 'admin@siakad.com',
-            'password' => Hash::make('password'),
-            'role' => 'admin',
-        ]);
+        $roles = [
+            'admin_pt' => 'Admin PT',
+            'admin_biku' => 'Admin Biku',
+            'admin_biak' => 'Admin BiAk',
+            'kaprodi' => 'Kaprodi',
+            'admin_prodi' => 'Admin Prodi',
+            'dosen' => 'Dosen',
+            'mahasiswa' => 'Mahasiswa',
+        ];
 
-        $this->command->info('Admin user created successfully!');
-        $this->command->info('Email: admin@siakad.com');
-        $this->command->info('Password: password');
+        foreach ($roles as $role => $name) {
+            User::create([
+                'name' => $name,
+                'email' => $role . '@siakad.com',
+                'password' => Hash::make('password'),
+                'role' => $role,
+            ]);
+            $this->command->info("User $name created successfully! Email: $role@siakad.com | Password: password");
+        }
     }
 }
 

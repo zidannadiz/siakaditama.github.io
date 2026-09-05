@@ -24,7 +24,7 @@ Sistem SIAKAD menggunakan arsitektur MVC (Model-View-Controller) yang memisahkan
 
 Pada layer kedua, terdapat web server berbasis Laravel yang terdiri dari beberapa komponen. Routing Layer menangani routing request melalui web.php untuk web routes dan api.php untuk API routes. Middleware Layer berfungsi untuk melakukan pengecekan autentikasi, otorisasi berbasis role (Admin, Dosen, Mahasiswa), dan proteksi CSRF. Controller Layer menangani business logic melalui berbagai controller seperti AdminController, DosenController, MahasiswaController, DashboardController, dan AuthController untuk login dan logout. Model Layer berfungsi sebagai data access layer yang berisi model-model seperti User, Mahasiswa, Dosen, MataKuliah, KRS, Nilai, JadwalKuliah, dan lain-lain.
 
-Pada layer ketiga, terdapat database server yang menyimpan data dalam tabel-tabel seperti users untuk pengguna sistem, mahasiswas untuk data mahasiswa, dosens untuk data dosen, prodis untuk program studi, mata_kuliahs untuk mata kuliah, semesters untuk semester akademik, jadwal_kuliahs untuk jadwal kuliah, krs untuk kartu rencana studi, nilais untuk nilai mahasiswa, pengumumans untuk pengumuman, notifikasis untuk notifikasi, sessions untuk session pengguna, dan password_reset_tokens untuk reset password. Komunikasi antara application layer dan data layer menggunakan Eloquent ORM atau Query Builder.
+Pada layer ketiga, terdapat database server yang menyimpan data akademik, komunikasi, pembelajaran daring, pembayaran, dan jejak audit. Tabel master meliputi users, mahasiswas, dosens, prodis, mata_kuliahs, semesters, dan jadwal_kuliahs. Tabel transaksional akademik meliputi krs, nilais, pengumumans, kalender_akademik, letter_grades, dan template_krs_khs. Tabel komunikasi meliputi conversations, messages, forum_topics, forum_posts, questions, answers, dan notifikasis. Tabel pembelajaran meliputi presensis, qr_code_sessions, class_sessions, class_attendances, assignments, assignment_submissions, exams, exam_questions, exam_sessions, exam_answers, dan exam_violation_rules. Tabel pembayaran meliputi banks dan payments. Tabel keamanan meliputi audit_logs, personal_access_tokens, sessions, dan password_reset_tokens. Komunikasi antara application layer dan data layer menggunakan Eloquent ORM atau Query Builder. Rincian ERD dan kamus data terdapat pada dokumen DESAIN_BASIS_DATA_ERD_BAB_III.md.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -79,19 +79,18 @@ Pada layer ketiga, terdapat database server yang menyimpan data dalam tabel-tabe
 │  ┌──────────────────────────────────────────────────────┐    │
 │  │              DATABASE (SQLite/MySQL)                 │    │
 │  │                                                       │    │
-│  │  • users (pengguna sistem)                           │    │
-│  │  • mahasiswas (data mahasiswa)                       │    │
-│  │  • dosens (data dosen)                               │    │
-│  │  • prodis (program studi)                            │    │
-│  │  • mata_kuliahs (mata kuliah)                        │    │
-│  │  • semesters (semester akademik)                     │    │
-│  │  • jadwal_kuliahs (jadwal kuliah)                    │    │
-│  │  • krs (kartu rencana studi)                         │    │
-│  │  • nilais (nilai mahasiswa)                          │    │
-│  │  • pengumumans (pengumuman)                          │    │
-│  │  • notifikasis (notifikasi)                          │    │
-│  │  • sessions (session pengguna)                       │    │
-│  │  • password_reset_tokens (reset password)            │    │
+│  │  Master: users, prodis, mahasiswas, dosens,          │    │
+│  │          mata_kuliahs, semesters, jadwal_kuliahs     │    │
+│  │  Akademik: krs, nilais, pengumumans, kalender        │    │
+│  │  Komunikasi: conversations, messages, forum_*,       │    │
+│  │              questions, answers, notifikasis         │    │
+│  │  Pembelajaran: presensis, qr_code_sessions,          │    │
+│  │                class_sessions, class_attendances,    │    │
+│  │                assignments, assignment_submissions,  │    │
+│  │                exams, exam_questions, exam_sessions, │    │
+│  │                exam_answers, exam_violation_rules    │    │
+│  │  Pembayaran: banks, payments                         │    │
+│  │  Keamanan: audit_logs, tokens, sessions              │    │
 │  └──────────────────────────────────────────────────────┘    │
 └───────────────────────────────────────────────────────────────┘
 ```
@@ -106,7 +105,7 @@ Alur request-response dimulai ketika pengguna melakukan aksi seperti mengambil K
 
 Konfigurasi database menggunakan SQLite untuk development atau MySQL untuk production. Sistem menggunakan Eloquent ORM sebagai abstraksi database yang memudahkan interaksi dengan database. Pengelolaan struktur database dilakukan menggunakan Laravel Migrations untuk version control, memastikan konsistensi struktur database di berbagai lingkungan.
 
-Database menggunakan relasi antar tabel untuk menjaga integritas data. Relasi User dengan Mahasiswa atau Dosen menggunakan pola One-to-One relationship, dimana setiap user dapat memiliki satu profil mahasiswa atau dosen. User dengan role mahasiswa terhubung ke tabel mahasiswas, sedangkan user dengan role dosen terhubung ke tabel dosens. Relasi Program Studi dengan Mahasiswa atau Dosen menggunakan pola One-to-Many relationship, dimana satu program studi dapat memiliki banyak mahasiswa dan dosen. Relasi Jadwal Kuliah dengan Mata Kuliah menggunakan pola Many-to-One relationship, dimana banyak jadwal kuliah dapat menggunakan satu mata kuliah yang sama. Relasi KRS dengan Mahasiswa dan Jadwal Kuliah menggunakan pola Many-to-Many relationship, dimana satu mahasiswa dapat mengambil banyak mata kuliah melalui KRS, dan satu jadwal kuliah dapat diikuti banyak mahasiswa. Relasi Nilai dengan KRS, Mahasiswa, dan Dosen merupakan complex relationship dimana nilai terhubung dengan KRS, Mahasiswa, Jadwal Kuliah, dan Dosen secara bersamaan.
+Database menggunakan relasi antar tabel untuk menjaga integritas data. Relasi User dengan Mahasiswa atau Dosen menggunakan pola One-to-One, dimana setiap user dapat memiliki satu profil mahasiswa atau dosen. Relasi Program Studi dengan Mahasiswa dan Mata Kuliah menggunakan pola One-to-Many. Relasi KRS merepresentasikan Many-to-Many antara Mahasiswa dan Jadwal Kuliah. Relasi Nilai terhubung ke KRS, Mahasiswa, Jadwal Kuliah, dan Dosen. Modul komunikasi memakai One-to-Many dari User ke Forum Topic, Forum Post, Message, Question, Answer, dan Notifikasi; Conversation menghubungkan dua User dan memiliki banyak Message. Modul pembelajaran memakai One-to-Many dari Jadwal Kuliah ke Presensi, Assignment, dan Exam; Assignment ke Assignment Submission bersifat One-to-Many dengan unik per mahasiswa; Exam ke Exam Session dan Exam Question bersifat One-to-Many, Exam Session ke Exam Answer One-to-Many, serta Exam ke Exam Violation Rule bersifat One-to-One. Audit Log bersifat polimorfik terhadap model yang diubah dan terhubung ke User secara nullable.
 
 Keamanan database diimplementasikan melalui beberapa mekanisme. Password di-hash menggunakan bcrypt untuk mencegah akses tidak sah. Proteksi terhadap SQL Injection dilakukan dengan menggunakan Eloquent ORM yang sudah terproteksi secara built-in. Foreign Key Constraints digunakan untuk menjaga integritas referensial antar tabel. Untuk operasi kompleks, sistem menggunakan database transaction untuk memastikan konsistensi data.
 
