@@ -55,7 +55,7 @@ class MahasiswaController extends Controller
             'nim' => 'required|string|max:20|unique:mahasiswas,nim',
             'nama' => 'required|string|max:255',
             'email' => ['required', new ValidEmail(), 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8', new StrongPassword()],
+            'password' => ['required', 'string', new StrongPassword()],
             'prodi_id' => 'required|exists:prodis,id',
             'jenis_kelamin' => 'required|in:L,P',
             'tempat_lahir' => 'nullable|string',

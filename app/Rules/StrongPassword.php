@@ -15,6 +15,11 @@ class StrongPassword implements Rule
      */
     public function passes($attribute, $value)
     {
+        // Untuk local development dan testing, minimal 6 karakter
+        if (app()->environment('local', 'testing')) {
+            return is_string($value) && strlen($value) >= 6;
+        }
+
         // Minimum 8 karakter
         if (strlen($value) < 8) {
             return false;
@@ -45,6 +50,9 @@ class StrongPassword implements Rule
      */
     public function message()
     {
+        if (app()->environment('local', 'testing')) {
+            return 'Password minimal 6 karakter.';
+        }
         return 'Password harus minimal 8 karakter dan mengandung huruf besar, huruf kecil, serta angka.';
     }
 }

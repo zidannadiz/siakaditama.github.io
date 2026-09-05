@@ -42,6 +42,17 @@ class RoleMiddleware
             $parsedRoles = array_merge($parsedRoles, explode(',', $roleGroup));
         }
 
+        // admin dan admin_pt bersifat ekuivalen
+        if ($userRole === 'admin') {
+            $userRole = 'admin_pt';
+        }
+        if (in_array('admin_pt', $parsedRoles) && !in_array('admin', $parsedRoles)) {
+            $parsedRoles[] = 'admin';
+        }
+        if (in_array('admin', $parsedRoles) && !in_array('admin_pt', $parsedRoles)) {
+            $parsedRoles[] = 'admin_pt';
+        }
+
         if (!in_array($userRole, $parsedRoles)) {
             abort(403, 'Unauthorized access.');
         }

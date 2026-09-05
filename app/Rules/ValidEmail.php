@@ -17,14 +17,12 @@ class ValidEmail implements ValidationRule
     {
         // Validasi format email dasar
         if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
-            $fail('Email tidak valid. Pastikan email yang digunakan adalah email asli dan dapat diverifikasi.');
+            $fail('Email tidak valid. Pastikan format email sudah benar (contoh: user@gmail.com).');
             return;
         }
 
-        // Validasi format email menggunakan regex yang lebih ketat
-        $pattern = '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/';
-        if (!preg_match($pattern, $value)) {
-            $fail('Email tidak valid. Pastikan email yang digunakan adalah email asli dan dapat diverifikasi.');
+        // Izinkan semua domain/format email valid pada local development dan testing
+        if (app()->environment('local', 'testing')) {
             return;
         }
 

@@ -9,6 +9,22 @@
         <p class="text-gray-600 mt-1">Tambah data mahasiswa baru</p>
     </div>
 
+    @if ($errors->any())
+        <div class="p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg text-red-700">
+            <div class="flex items-center mb-2">
+                <svg class="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="font-bold">Terdapat beberapa kesalahan pengisian form:</span>
+            </div>
+            <ul class="list-disc list-inside text-sm space-y-1">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <form action="{{ route('admin.mahasiswa.store') }}" method="POST" class="space-y-6">
             @csrf

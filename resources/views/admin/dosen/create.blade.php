@@ -8,6 +8,22 @@
         <h1 class="text-3xl font-bold text-gray-900">Tambah Dosen</h1>
     </div>
 
+    @if ($errors->any())
+        <div class="p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg text-red-700">
+            <div class="flex items-center mb-2">
+                <svg class="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="font-bold">Terdapat beberapa kesalahan pengisian form:</span>
+            </div>
+            <ul class="list-disc list-inside text-sm space-y-1">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <form action="{{ route('admin.dosen.store') }}" method="POST" class="space-y-6">
             @csrf
@@ -40,7 +56,22 @@
                     <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password *</label>
                     <input type="password" id="password" name="password" required
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="text-xs text-gray-500 mt-1">Minimal 8 karakter, harus mengandung huruf besar, huruf kecil, dan angka</p>
                     @error('password') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label for="prodi_id" class="block text-sm font-medium text-gray-700 mb-2">Program Studi *</label>
+                    <select id="prodi_id" name="prodi_id" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Pilih Program Studi</option>
+                        @foreach($prodis as $prodi)
+                            <option value="{{ $prodi->id }}" {{ old('prodi_id') == $prodi->id ? 'selected' : '' }}>
+                                {{ $prodi->nama_prodi }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('prodi_id') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 <div>

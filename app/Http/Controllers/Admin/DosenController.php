@@ -9,7 +9,9 @@ use App\Rules\ValidEmail;
 use App\Rules\StrongPassword;
 use App\Services\AuditLogService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class DosenController extends Controller
 {
@@ -62,35 +64,50 @@ class DosenController extends Controller
             'status' => 'required|in:aktif,nonaktif',
         ]);
 
-        $user = User::create([
-            'name' => $validated['nama'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'role' => 'dosen',
-        ]);
+        DB::beginTransaction();
+        try {
+            $user = User::create([
+                'name' => $validated['nama'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'role' => 'dosen',
+            ]);
 
-        $dosen = Dosen::create([
-            'user_id' => $user->id,
-            'prodi_id' => $validated['prodi_id'],
-            'nidn' => $validated['nidn'],
-            'nama' => $validated['nama'],
-            'jenis_kelamin' => $validated['jenis_kelamin'],
-            'tempat_lahir' => $validated['tempat_lahir'] ?? null,
-            'tanggal_lahir' => $validated['tanggal_lahir'] ?? null,
-            'alamat' => $validated['alamat'] ?? null,
-            'no_hp' => $validated['no_hp'] ?? null,
-            'email' => $validated['email'],
-            'status' => $validated['status'],
-        ]);
+            $dosen = Dosen::create([
+                'user_id' => $user->id,
+                'prodi_id' => $validated['prodi_id'],
+                'nidn' => $validated['nidn'],
+                'nama' => $validated['nama'],
+                'jenis_kelamin' => $validated['jenis_kelamin'],
+                'tempat_lahir' => $validated['tempat_lahir'] ?? null,
+                'tanggal_lahir' => $validated['tanggal_lahir'] ?? null,
+                'alamat' => $validated['alamat'] ?? null,
+                'no_hp' => $validated['no_hp'] ?? null,
+                'email' => $validated['email'],
+                'status' => $validated['status'],
+            ]);
 
-        // Log audit
-        AuditLogService::logCreate(
-            $dosen,
-            "Menambahkan dosen baru: {$dosen->nama} (NIDN: {$dosen->nidn})"
-        );
+            DB::commit();
 
-        return redirect()->route('admin.dosen.index')
-            ->with('success', 'Dosen berhasil ditambahkan.');
+            // Log audit
+            AuditLogService::logCreate(
+                $dosen,
+                "Menambahkan dosen baru: {$dosen->nama} (NIDN: {$dosen->nidn})"
+            );
+
+            return redirect()->route('admin.dosen.index')
+                ->with('success', 'Dosen berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error creating dosen: ' . $e->getMessage(), [
+                'email' => $validated['email'] ?? null,
+                'nidn' => $validated['nidn'] ?? null,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return back()->withInput()
+                ->withErrors(['error' => 'Gagal menambahkan dosen: ' . $e->getMessage()]);
+        }
     }
 
     public function edit(Dosen $dosen)
