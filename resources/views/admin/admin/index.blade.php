@@ -37,8 +37,11 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
-                                    {{ ucfirst($admin->role) }}
+                                    {{ str_replace('_', ' ', strtoupper($admin->role)) }}
                                 </span>
+                                @if(in_array($admin->role, ['kaprodi', 'admin_prodi']) && $admin->prodi)
+                                    <div class="text-xs text-gray-500 mt-1">{{ $admin->prodi->nama_prodi }}</div>
+                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-500">{{ $admin->created_at->format('d M Y') }}</div>

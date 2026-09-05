@@ -13,14 +13,22 @@ class KRSController extends Controller
 {
     public function index()
     {
-        $krs_list = KRS::with(['mahasiswa', 'jadwalKuliah.mataKuliah', 'semester'])
-            ->latest()
-            ->paginate(15);
+        $query = KRS::with(['mahasiswa.prodi', 'jadwalKuliah.mataKuliah', 'semester'])->latest();
+        
+        if (auth()->user()->isAdminProdi()) {
+            $query->whereHas('mahasiswa', function($q) {
+                $q->where('prodi_id', auth()->user()->prodi_id);
+            });
+        }
+        
+        $krs_list = $query->paginate(15);
         return view('admin.krs.index', compact('krs_list'));
     }
 
     public function approve(KRS $krs)
     {
+        $this->authorizeProdi($krs);
+        
         $oldStatus = $krs->status;
         $krs->update(['status' => 'disetujui']);
 
@@ -48,6 +56,8 @@ class KRSController extends Controller
 
     public function reject(Request $request, KRS $krs)
     {
+        $this->authorizeProdi($krs);
+        
         $validated = $request->validate([
             'catatan' => 'nullable|string',
         ]);
@@ -90,6 +100,16 @@ class KRSController extends Controller
         );
 
         return back()->with('success', 'KRS berhasil ditolak.');
+    }
+
+    private function authorizeProdi(KRS $krs): void
+    {
+        if (auth()->user()->isAdminProdi()) {
+            $krs->loadMissing('mahasiswa');
+            if ($krs->mahasiswa->prodi_id !== auth()->user()->prodi_id) {
+                abort(403, 'Anda tidak berhak mengakses KRS mahasiswa prodi lain.');
+            }
+        }
     }
 }
 

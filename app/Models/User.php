@@ -52,6 +52,17 @@ class User extends Authenticatable implements CanResetPasswordContract
         ];
     }
 
+    public function prodi()
+    {
+        return $this->belongsTo(Prodi::class);
+    }
+
+    /** Helper: apakah user ini terikat ke prodi tertentu */
+    public function isAdminProdi(): bool
+    {
+        return in_array($this->role, ['admin_prodi', 'kaprodi']);
+    }
+
     public function notifikasis()
     {
         return $this->hasMany(\App\Models\Notifikasi::class);

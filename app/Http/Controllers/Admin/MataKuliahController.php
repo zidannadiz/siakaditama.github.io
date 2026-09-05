@@ -11,18 +11,31 @@ class MataKuliahController extends Controller
 {
     public function index()
     {
-        $mataKuliahs = MataKuliah::with('prodi')->latest()->paginate(15);
+        $query = MataKuliah::with('prodi')->latest();
+        
+        if (auth()->user()->isAdminProdi()) {
+            $query->where('prodi_id', auth()->user()->prodi_id);
+        }
+        
+        $mataKuliahs = $query->paginate(15);
         return view('admin.mata-kuliah.index', compact('mataKuliahs'));
     }
 
     public function create()
     {
-        $prodis = Prodi::all();
+        $prodis = auth()->user()->isAdminProdi()
+            ? Prodi::where('id', auth()->user()->prodi_id)->get()
+            : Prodi::all();
+            
         return view('admin.mata-kuliah.create', compact('prodis'));
     }
 
     public function store(Request $request)
     {
+        if (auth()->user()->isAdminProdi() && $request->prodi_id != auth()->user()->prodi_id) {
+            abort(403, 'Anda hanya bisa menambahkan mata kuliah di prodi Anda sendiri.');
+        }
+
         $validated = $request->validate([
             'kode_mk' => 'required|string|max:20|unique:mata_kuliahs,kode_mk',
             'nama_mk' => 'required|string|max:255',
@@ -41,13 +54,24 @@ class MataKuliahController extends Controller
 
     public function edit(MataKuliah $mataKuliah)
     {
+        $this->authorizeProdi($mataKuliah);
+        
         $mataKuliah->load('prodi');
-        $prodis = Prodi::all();
+        $prodis = auth()->user()->isAdminProdi()
+            ? Prodi::where('id', auth()->user()->prodi_id)->get()
+            : Prodi::all();
+            
         return view('admin.mata-kuliah.edit', compact('mataKuliah', 'prodis'));
     }
 
     public function update(Request $request, MataKuliah $mataKuliah)
     {
+        $this->authorizeProdi($mataKuliah);
+        
+        if (auth()->user()->isAdminProdi() && $request->prodi_id != auth()->user()->prodi_id) {
+            abort(403, 'Anda tidak bisa memindahkan mata kuliah ke prodi lain.');
+        }
+
         $validated = $request->validate([
             'kode_mk' => 'required|string|max:20|unique:mata_kuliahs,kode_mk,' . $mataKuliah->id,
             'nama_mk' => 'required|string|max:255',
@@ -66,10 +90,19 @@ class MataKuliahController extends Controller
 
     public function destroy(MataKuliah $mataKuliah)
     {
+        $this->authorizeProdi($mataKuliah);
+        
         $mataKuliah->delete();
 
         return redirect()->route('admin.mata-kuliah.index')
             ->with('success', 'Mata Kuliah berhasil dihapus.');
+    }
+
+    private function authorizeProdi(MataKuliah $mataKuliah): void
+    {
+        if (auth()->user()->isAdminProdi() && $mataKuliah->prodi_id !== auth()->user()->prodi_id) {
+            abort(403, 'Anda tidak berhak mengakses mata kuliah prodi lain.');
+        }
     }
 }
 

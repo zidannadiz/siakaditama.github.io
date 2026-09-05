@@ -13,22 +13,43 @@ class JadwalKuliahController extends Controller
 {
     public function index()
     {
-        $jadwalKuliahs = JadwalKuliah::with(['mataKuliah', 'dosen', 'semester'])
-            ->latest()
-            ->paginate(15);
+        $query = JadwalKuliah::with(['mataKuliah.prodi', 'dosen', 'semester'])->latest();
+        
+        if (auth()->user()->isAdminProdi()) {
+            $query->whereHas('mataKuliah', function($q) {
+                $q->where('prodi_id', auth()->user()->prodi_id);
+            });
+        }
+        
+        $jadwalKuliahs = $query->paginate(15);
         return view('admin.jadwal-kuliah.index', compact('jadwalKuliahs'));
     }
 
     public function create()
     {
-        $mataKuliahs = MataKuliah::all();
-        $dosens = Dosen::where('status', 'aktif')->get();
+        $prodiId = auth()->user()->prodi_id;
+        
+        $mataKuliahs = auth()->user()->isAdminProdi() 
+            ? MataKuliah::where('prodi_id', $prodiId)->get() 
+            : MataKuliah::all();
+            
+        $dosens = auth()->user()->isAdminProdi()
+            ? Dosen::where('status', 'aktif')->where('prodi_id', $prodiId)->get()
+            : Dosen::where('status', 'aktif')->get();
+            
         $semesters = Semester::all();
         return view('admin.jadwal-kuliah.create', compact('mataKuliahs', 'dosens', 'semesters'));
     }
 
     public function store(Request $request)
     {
+        if (auth()->user()->isAdminProdi()) {
+            $mk = MataKuliah::find($request->mata_kuliah_id);
+            if ($mk && $mk->prodi_id != auth()->user()->prodi_id) {
+                abort(403, 'Anda hanya bisa membuat jadwal untuk mata kuliah di prodi Anda sendiri.');
+            }
+        }
+
         $validated = $request->validate([
             'mata_kuliah_id' => 'required|exists:mata_kuliahs,id',
             'dosen_id' => 'required|exists:dosens,id',
@@ -51,15 +72,34 @@ class JadwalKuliahController extends Controller
 
     public function edit(JadwalKuliah $jadwalKuliah)
     {
+        $this->authorizeProdi($jadwalKuliah);
+        
         $jadwalKuliah->load(['mataKuliah', 'dosen', 'semester']);
-        $mataKuliahs = MataKuliah::all();
-        $dosens = Dosen::where('status', 'aktif')->get();
+        $prodiId = auth()->user()->prodi_id;
+        
+        $mataKuliahs = auth()->user()->isAdminProdi() 
+            ? MataKuliah::where('prodi_id', $prodiId)->get() 
+            : MataKuliah::all();
+            
+        $dosens = auth()->user()->isAdminProdi()
+            ? Dosen::where('status', 'aktif')->where('prodi_id', $prodiId)->get()
+            : Dosen::where('status', 'aktif')->get();
+            
         $semesters = Semester::all();
         return view('admin.jadwal-kuliah.edit', compact('jadwalKuliah', 'mataKuliahs', 'dosens', 'semesters'));
     }
 
     public function update(Request $request, JadwalKuliah $jadwalKuliah)
     {
+        $this->authorizeProdi($jadwalKuliah);
+        
+        if (auth()->user()->isAdminProdi()) {
+            $mk = MataKuliah::find($request->mata_kuliah_id);
+            if ($mk && $mk->prodi_id != auth()->user()->prodi_id) {
+                abort(403, 'Anda tidak bisa mengubah ke mata kuliah prodi lain.');
+            }
+        }
+
         $validated = $request->validate([
             'mata_kuliah_id' => 'required|exists:mata_kuliahs,id',
             'dosen_id' => 'required|exists:dosens,id',
@@ -80,10 +120,22 @@ class JadwalKuliahController extends Controller
 
     public function destroy(JadwalKuliah $jadwalKuliah)
     {
+        $this->authorizeProdi($jadwalKuliah);
+        
         $jadwalKuliah->delete();
 
         return redirect()->route('admin.jadwal-kuliah.index')
             ->with('success', 'Jadwal Kuliah berhasil dihapus.');
+    }
+
+    private function authorizeProdi(JadwalKuliah $jadwalKuliah): void
+    {
+        if (auth()->user()->isAdminProdi()) {
+            $jadwalKuliah->loadMissing('mataKuliah');
+            if ($jadwalKuliah->mataKuliah->prodi_id !== auth()->user()->prodi_id) {
+                abort(403, 'Anda tidak berhak mengakses jadwal kuliah prodi lain.');
+            }
+        }
     }
 }
 

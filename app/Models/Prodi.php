@@ -26,6 +26,22 @@ class Prodi extends Model
         return $this->hasMany(MataKuliah::class);
     }
 
+    public function dosens(): HasMany
+    {
+        return $this->hasMany(Dosen::class);
+    }
+
+    public function kurikulums(): HasMany
+    {
+        return $this->hasMany(Kurikulum::class);
+    }
+
+    /** Users yang terikat ke prodi ini (kaprodi, admin_prodi) */
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class);
+    }
+
     /**
      * Accessor untuk kompatibilitas dengan kode yang menggunakan ->kode dan ->nama
      */

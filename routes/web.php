@@ -28,6 +28,9 @@ use App\Http\Controllers\Forum\ForumController;
 use App\Http\Controllers\QnA\QuestionController;
 use App\Http\Controllers\Payment\PaymentController;
 use App\Http\Controllers\Admin\TemplateKrsKhsController;
+use App\Http\Controllers\Admin\TahunAjaranController;
+use App\Http\Controllers\Admin\KurikulumController;
+use App\Http\Controllers\Admin\KurikulumDetailController;
 use App\Http\Controllers\KrsKhs\GenerateKrsKhsController;
 use Illuminate\Support\Facades\Route;
 
@@ -76,22 +79,41 @@ Route::middleware(['auth'])->group(function () {
         ]);
     })->name('session.check');
 
-    // Admin routes
+    // Admin routes - General (All Admin Roles can access dashboard)
     Route::middleware(['role:admin,admin_pt,admin_biku,admin_biak,kaprodi,admin_prodi'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', AdminDashboardController::class)->name('dashboard');
         
-        Route::resource('prodi', ProdiController::class);
-        Route::resource('mahasiswa', MahasiswaController::class);
-        Route::resource('dosen', DosenController::class);
-        Route::resource('mata-kuliah', MataKuliahController::class);
-        Route::resource('jadwal-kuliah', JadwalKuliahController::class);
-        Route::resource('semester', SemesterController::class);
-        Route::resource('pengumuman', PengumumanController::class);
-        Route::resource('admin', AdminController::class)->except(['show']);
-        
-        Route::get('/krs', [AdminKRSController::class, 'index'])->name('krs.index');
-        Route::post('/krs/{krs}/approve', [AdminKRSController::class, 'approve'])->name('krs.approve');
-        Route::post('/krs/{krs}/reject', [AdminKRSController::class, 'reject'])->name('krs.reject');
+        // M. User / M. Role -> Hanya Admin PT
+        Route::middleware(['role:admin_pt'])->group(function () {
+            Route::resource('admin', AdminController::class)->except(['show']);
+        });
+
+        // M. Prodi, M. Tahun Ajaran, M. Semester -> Admin PT, Admin BiAk, Kaprodi, Admin Prodi
+        Route::middleware(['role:admin_pt,admin_biak,kaprodi,admin_prodi'])->group(function () {
+            Route::resource('prodi', ProdiController::class);
+            Route::resource('semester', SemesterController::class);
+            Route::resource('tahun-ajaran', TahunAjaranController::class);
+        });
+
+        // M. Mahasiswa, M. Dosen, M. Mata Kuliah, M. Kurikulum, D. Jadwal Kuliah, D. KRS -> Admin PT, Kaprodi, Admin Prodi
+        Route::middleware(['role:admin_pt,kaprodi,admin_prodi'])->group(function () {
+            Route::resource('mahasiswa', MahasiswaController::class);
+            Route::resource('dosen', DosenController::class);
+            Route::resource('mata-kuliah', MataKuliahController::class);
+            Route::resource('jadwal-kuliah', JadwalKuliahController::class);
+            Route::resource('kurikulum', KurikulumController::class);
+            Route::post('/kurikulum/{kurikulum}/detail', [KurikulumController::class, 'addDetail'])->name('kurikulum.detail.add');
+            Route::delete('/kurikulum/{kurikulum}/detail/{detail}', [KurikulumController::class, 'removeDetail'])->name('kurikulum.detail.remove');
+            
+            Route::get('/krs', [AdminKRSController::class, 'index'])->name('krs.index');
+            Route::post('/krs/{krs}/approve', [AdminKRSController::class, 'approve'])->name('krs.approve');
+            Route::post('/krs/{krs}/reject', [AdminKRSController::class, 'reject'])->name('krs.reject');
+        });
+
+        // Pengumuman (Umum untuk PT & Akademik)
+        Route::middleware(['role:admin_pt,admin_biak'])->group(function () {
+            Route::resource('pengumuman', PengumumanController::class);
+        });
         
         // Payment management
         Route::prefix('payment')->name('payment.')->group(function () {

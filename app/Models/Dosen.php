@@ -13,6 +13,7 @@ class Dosen extends Model
 
     protected $fillable = [
         'user_id',
+        'prodi_id',
         'nidn',
         'nama',
         'jenis_kelamin',
@@ -27,6 +28,11 @@ class Dosen extends Model
     protected $casts = [
         'tanggal_lahir' => 'date',
     ];
+
+    public function prodi(): BelongsTo
+    {
+        return $this->belongsTo(Prodi::class);
+    }
 
     public function user(): BelongsTo
     {

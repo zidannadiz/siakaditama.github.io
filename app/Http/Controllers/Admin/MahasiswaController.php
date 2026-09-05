@@ -18,18 +18,31 @@ class MahasiswaController extends Controller
 {
     public function index()
     {
-        $mahasiswas = Mahasiswa::with(['prodi', 'user'])->latest()->paginate(15);
+        $query = Mahasiswa::with(['prodi', 'user'])->latest();
+        
+        if (auth()->user()->isAdminProdi()) {
+            $query->where('prodi_id', auth()->user()->prodi_id);
+        }
+        
+        $mahasiswas = $query->paginate(15);
         return view('admin.mahasiswa.index', compact('mahasiswas'));
     }
 
     public function create()
     {
-        $prodis = Prodi::all();
+        $prodis = auth()->user()->isAdminProdi()
+            ? Prodi::where('id', auth()->user()->prodi_id)->get()
+            : Prodi::all();
+            
         return view('admin.mahasiswa.create', compact('prodis'));
     }
 
     public function store(Request $request)
     {
+        if (auth()->user()->isAdminProdi() && $request->prodi_id != auth()->user()->prodi_id) {
+            abort(403, 'Anda hanya bisa menambahkan mahasiswa di prodi Anda sendiri.');
+        }
+
         $validated = $request->validate([
             'nim' => 'required|string|max:20|unique:mahasiswas,nim',
             'nama' => 'required|string|max:255',
@@ -101,13 +114,24 @@ class MahasiswaController extends Controller
 
     public function edit(Mahasiswa $mahasiswa)
     {
+        $this->authorizeProdi($mahasiswa);
+        
         $mahasiswa->load(['prodi', 'user']);
-        $prodis = Prodi::all();
+        $prodis = auth()->user()->isAdminProdi()
+            ? Prodi::where('id', auth()->user()->prodi_id)->get()
+            : Prodi::all();
+            
         return view('admin.mahasiswa.edit', compact('mahasiswa', 'prodis'));
     }
 
     public function update(Request $request, Mahasiswa $mahasiswa)
     {
+        $this->authorizeProdi($mahasiswa);
+        
+        if (auth()->user()->isAdminProdi() && $request->prodi_id != auth()->user()->prodi_id) {
+            abort(403, 'Anda tidak bisa memindahkan mahasiswa ke prodi lain.');
+        }
+
         $validated = $request->validate([
             'nim' => 'required|string|max:20|unique:mahasiswas,nim,' . $mahasiswa->id,
             'nama' => 'required|string|max:255',
@@ -163,6 +187,8 @@ class MahasiswaController extends Controller
 
     public function destroy(Mahasiswa $mahasiswa)
     {
+        $this->authorizeProdi($mahasiswa);
+        
         $mahasiswaData = $mahasiswa->toArray();
         $mahasiswaName = $mahasiswa->nama;
         $mahasiswaNim = $mahasiswa->nim;
@@ -181,6 +207,13 @@ class MahasiswaController extends Controller
 
         return redirect()->route('admin.mahasiswa.index')
             ->with('success', 'Mahasiswa berhasil dihapus.');
+    }
+
+    private function authorizeProdi(Mahasiswa $mahasiswa): void
+    {
+        if (auth()->user()->isAdminProdi() && $mahasiswa->prodi_id !== auth()->user()->prodi_id) {
+            abort(403, 'Anda tidak berhak mengakses data mahasiswa prodi lain.');
+        }
     }
 }
 

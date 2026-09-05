@@ -142,7 +142,7 @@
 
 <aside class="w-64 bg-white border-r border-gray-200">
     <nav class="p-4 space-y-1">
-        @if(in_array($role, ['admin', 'admin_pt']))
+        @if(in_array($role, ['admin_pt', 'admin_biak', 'admin_biku', 'kaprodi', 'admin_prodi']))
             <a href="{{ route('admin.dashboard') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.dashboard') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
@@ -150,28 +150,47 @@
                 <span class="font-medium">Dashboard</span>
             </a>
             
+            @if($role === 'admin_pt')
             <div class="pt-4">
-                <p class="px-4 text-xs font-semibold text-gray-500text-gray-400text-gray-400 uppercase tracking-wider">Pengguna</p>
+                <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Pengguna</p>
             </div>
             
             <a href="{{ route('admin.admin.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.admin') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                 </svg>
-                <span>Admin</span>
+                <span>Admin & Role</span>
             </a>
+            @endif
             
+            @if(in_array($role, ['admin_pt', 'admin_biak', 'kaprodi', 'admin_prodi']))
             <div class="pt-4">
-                <p class="px-4 text-xs font-semibold text-gray-500text-gray-400text-gray-400 uppercase tracking-wider">Master Data</p>
+                <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Master Data</p>
             </div>
             
+            <a href="{{ route('admin.tahun-ajaran.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.tahun-ajaran') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <span>Tahun Ajaran</span>
+            </a>
+
+            <a href="{{ route('admin.semester.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.semester') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <span>Semester</span>
+            </a>
+
             <a href="{{ route('admin.prodi.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.prodi') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                 </svg>
                 <span>Program Studi</span>
             </a>
-            
+            @endif
+
+            @if(in_array($role, ['admin_pt', 'kaprodi', 'admin_prodi']))
             <a href="{{ route('admin.mahasiswa.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.mahasiswa') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
@@ -185,19 +204,19 @@
                 </svg>
                 <span>Dosen</span>
             </a>
+
+            <a href="{{ route('admin.kurikulum.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.kurikulum') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <span>Kurikulum</span>
+            </a>
             
             <a href="{{ route('admin.mata-kuliah.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.mata-kuliah') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                 </svg>
                 <span>Mata Kuliah</span>
-            </a>
-            
-            <a href="{{ route('admin.semester.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.semester') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                </svg>
-                <span>Semester</span>
             </a>
             
             <a href="{{ route('admin.jadwal-kuliah.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.jadwal-kuliah') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
@@ -208,7 +227,7 @@
             </a>
             
             <div class="pt-4">
-                <p class="px-4 text-xs font-semibold text-gray-500text-gray-400 uppercase tracking-wider">Akademik</p>
+                <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Akademik</p>
             </div>
             
             <a href="{{ route('admin.krs.index') }}" class="flex items-center justify-between px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.krs') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
@@ -218,35 +237,15 @@
                     </svg>
                     <span>KRS</span>
                 </div>
-                @if(auth()->user()->role === 'admin')
-                    @php
-                        // Variabel dari View Composer (AppServiceProvider)
-                        // Fallback jika View Composer tidak dipanggil
-                        if (!isset($pendingKrsCount)) {
-                            $pendingKrs = \App\Models\KRS::where('status', 'pending')->get();
-                            $pendingKrsCount = $pendingKrs->count();
-                        }
-                    @endphp
-                    @if($pendingKrsCount > 0)
-                        <span class="rounded-full flex-shrink-0" style="width: 10px; height: 10px; background-color: #ff0000 !important; border: 2px solid white; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.3);"></span>
-                    @endif
-                @endif
             </a>
-            
+            @endif
+
+            {{-- Fitur Ekstra yang Belum Dipangkas Tapi Disembunyikan Sesuai Arahan --}}
+            {{-- HIDDEN admin.template-krs-khs --}}
             {{-- HIDDEN admin.pengumuman --}}
-            
-            <a href="{{ route('admin.template-krs-khs.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.template-krs-khs') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-                <span>Template KRS/KHS</span>
-            </a>
-            
             {{-- HIDDEN admin.kalender-akademik --}}
             {{-- HIDDEN admin.active-users --}}
-            
             {{-- HIDDEN admin.backup --}}
-            
             {{-- HIDDEN admin.system-settings --}}
             
             {{-- HIDDEN admin.audit-log --}}
@@ -378,17 +377,7 @@
             {{-- HIDDEN mahasiswa.kalender-akademik --}}
             
             {{-- HIDDEN mahasiswa.statistik-keaktifan --}}
-        @elseif(in_array($role, ['admin_biak', 'admin_biku', 'kaprodi', 'admin_prodi']))
-            <a href="{{ route('admin.dashboard') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors bg-blue-50 text-blue-700">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                </svg>
-                <span class="font-medium">Dashboard</span>
-            </a>
-            <div class="p-3 my-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-                Fitur untuk <b>{{ strtoupper(str_replace('_', ' ', $role)) }}</b> sedang disiapkan sesuai struktur baru.
-            </div>
-        @endif
+
 
         {{-- <!-- Komunikasi (untuk semua role) - HIDDEN -->
         <div class="pt-4 mt-4 border-t border-gray-200">

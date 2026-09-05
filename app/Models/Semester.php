@@ -11,6 +11,7 @@ class Semester extends Model
     use HasFactory;
 
     protected $fillable = [
+        'tahun_ajaran_id',
         'nama_semester',
         'jenis',
         'tahun_ajaran',
@@ -23,6 +24,11 @@ class Semester extends Model
         'tanggal_mulai' => 'date',
         'tanggal_selesai' => 'date',
     ];
+
+    public function tahunAjaran()
+    {
+        return $this->belongsTo(TahunAjaran::class);
+    }
 
     public function jadwalKuliahs(): HasMany
     {
