@@ -9,9 +9,11 @@
             <h1 class="text-3xl font-bold text-gray-900">Kurikulum</h1>
             <p class="text-gray-600 mt-1">Kelola data kurikulum program studi</p>
         </div>
+        @if(in_array(auth()->user()->role, ['admin', 'admin_pt', 'admin_prodi']))
         <a href="{{ route('admin.kurikulum.create') }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
             + Tambah Kurikulum
         </a>
+        @endif
     </div>
 
     @if(session('success'))
@@ -56,12 +58,14 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <a href="{{ route('admin.kurikulum.show', $k) }}" class="text-blue-600 hover:text-blue-900 mr-3">Detail & Mata Kuliah</a>
+                            @if(in_array(auth()->user()->role, ['admin', 'admin_pt', 'admin_prodi']))
                             <a href="{{ route('admin.kurikulum.edit', $k) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
                             <form action="{{ route('admin.kurikulum.destroy', $k) }}" method="POST" class="inline-block" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kurikulum ini beserta detail mata kuliahnya?');">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="text-red-600 hover:text-red-900">Hapus</button>
                             </form>
+                            @endif
                         </td>
                     </tr>
                     @empty

@@ -30,7 +30,7 @@
     
     <div class="header">
         <h2>KARTU HASIL STUDI (KHS)</h2>
-        <h3>{{ config('app.name', 'SIA ITAMA') }}</h3>
+        <h3>{{ config('app.name', 'SIAKAD ITAMA') }}</h3>
     </div>
 
     <table class="info-table">

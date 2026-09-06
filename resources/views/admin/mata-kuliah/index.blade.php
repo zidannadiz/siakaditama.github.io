@@ -9,9 +9,11 @@
             <h1 class="text-3xl font-bold text-gray-900">Mata Kuliah</h1>
             <p class="text-gray-600 mt-1">Kelola mata kuliah</p>
         </div>
+        @if(in_array(auth()->user()->role, ['admin', 'admin_pt', 'admin_prodi']))
         <a href="{{ route('admin.mata-kuliah.create') }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
             + Tambah Mata Kuliah
         </a>
+        @endif
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -36,12 +38,16 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $mk->sks }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $mk->semester }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                @if(in_array(auth()->user()->role, ['admin', 'admin_pt', 'admin_prodi']))
                                 <a href="{{ route('admin.mata-kuliah.edit', $mk) }}" class="text-blue-600 hover:text-blue-900 mr-3">Edit</a>
                                 <form action="{{ route('admin.mata-kuliah.destroy', $mk) }}" method="POST" class="inline" onsubmit="return confirm('Yakin ingin menghapus?')">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="text-red-600 hover:text-red-900" style="cursor: pointer;">Hapus</button>
                                 </form>
+                                @else
+                                <span class="text-gray-400 italic">Read-only</span>
+                                @endif
                             </td>
                         </tr>
                     @empty

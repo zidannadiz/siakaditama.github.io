@@ -23,6 +23,8 @@ class MataKuliahController extends Controller
 
     public function create()
     {
+        abort_if(auth()->user()->role === 'kaprodi', 403, 'Anda tidak memiliki wewenang untuk menambah data ini.');
+
         $prodis = auth()->user()->isAdminProdi()
             ? Prodi::where('id', auth()->user()->prodi_id)->get()
             : Prodi::all();
@@ -32,6 +34,8 @@ class MataKuliahController extends Controller
 
     public function store(Request $request)
     {
+        abort_if(auth()->user()->role === 'kaprodi', 403, 'Anda tidak memiliki wewenang untuk menyimpan data ini.');
+
         if (auth()->user()->isAdminProdi() && $request->prodi_id != auth()->user()->prodi_id) {
             abort(403, 'Anda hanya bisa menambahkan mata kuliah di prodi Anda sendiri.');
         }

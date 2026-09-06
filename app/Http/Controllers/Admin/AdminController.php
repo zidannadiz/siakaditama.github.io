@@ -101,11 +101,8 @@ class AdminController extends Controller
 
         $admin->name = $validated['name'];
         $admin->email = $validated['email'];
-        // Do not update role if the current user is modifying themselves (prevent accidental lockout)
-        if ($admin->id !== auth()->id()) {
-            $admin->role = $validated['role'];
-            $admin->prodi_id = in_array($validated['role'], ['kaprodi', 'admin_prodi']) ? $validated['prodi_id'] : null;
-        }
+        $admin->role = $validated['role'];
+        $admin->prodi_id = in_array($validated['role'], ['kaprodi', 'admin_prodi']) ? $validated['prodi_id'] : null;
         
         if (!empty($validated['password'])) {
             $admin->password = Hash::make($validated['password']);

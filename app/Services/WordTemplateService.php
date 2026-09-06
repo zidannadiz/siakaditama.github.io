@@ -15,16 +15,22 @@ class WordTemplateService
     public function generateDocument($templateId, $mahasiswaId, $semesterId = null, $tanggalCetak = null)
     {
         $template = TemplateKrsKhs::findOrFail($templateId);
-        $mahasiswa = Mahasiswa::with(['prodi', 'nilais.jadwalKuliah.mataKuliah', 'nilais.dosen', 'nilais.semester'])
+        $mahasiswa = Mahasiswa::with(['prodi', 'nilais.jadwalKuliah.mataKuliah', 'nilais.dosen'])
             ->findOrFail($mahasiswaId);
         
         // Get user from mahasiswa
         $mahasiswa->load('user');
 
-        // Pastikan file template ada
-        $templatePath = storage_path('app/' . $template->file_path);
+        // Pastikan file template ada menggunakan disk 'local'
+        $templatePath = Storage::disk('local')->path($template->file_path);
         if (!file_exists($templatePath)) {
-            throw new \Exception("Template file not found: {$template->file_path}");
+            // Fallback checking legacy structure (storage/app/...) if somehow it was there
+            $legacyPath = storage_path('app/' . $template->file_path);
+            if (file_exists($legacyPath)) {
+                $templatePath = $legacyPath;
+            } else {
+                throw new \Exception("Template file not found: {$template->file_path}");
+            }
         }
 
         // Buat TemplateProcessor

@@ -176,10 +176,16 @@ class TemplateKrsKhsController extends Controller
      */
     public function download(TemplateKrsKhs $templateKrsKh)
     {
-        $filePath = storage_path('app/' . $templateKrsKh->file_path);
+        $filePath = Storage::disk('local')->path($templateKrsKh->file_path);
         
         if (!file_exists($filePath)) {
-            return back()->with('error', 'File template tidak ditemukan');
+            // Fallback for legacy paths
+            $legacyPath = storage_path('app/' . $templateKrsKh->file_path);
+            if (file_exists($legacyPath)) {
+                $filePath = $legacyPath;
+            } else {
+                return back()->with('error', 'File template tidak ditemukan di server.');
+            }
         }
 
         return response()->download($filePath, $templateKrsKh->nama_template . '.docx');

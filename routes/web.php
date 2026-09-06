@@ -105,12 +105,19 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('dosen', DosenController::class);
         });
 
-        // M. Mata Kuliah & Kurikulum -> Admin PT (CRUD), Kaprodi (CRUD), Admin Prodi (CRUD)
-        Route::middleware(['role:admin_pt,kaprodi,admin_prodi'])->group(function () {
-            Route::resource('mata-kuliah', MataKuliahController::class);
-            Route::resource('kurikulum', KurikulumController::class);
+        // M. Mata Kuliah & Kurikulum -> Admin PT, Admin Prodi (CRUD)
+        // Diletakkan DI ATAS route "only index & show" agar route "create" tidak ter-override oleh wildcard "{kurikulum}" (penyebab 404)
+        Route::middleware(['role:admin,admin_pt,admin_prodi'])->group(function () {
+            Route::resource('mata-kuliah', MataKuliahController::class)->except(['index', 'show']);
+            Route::resource('kurikulum', KurikulumController::class)->except(['index', 'show']);
             Route::post('/kurikulum/{kurikulum}/detail', [KurikulumController::class, 'addDetail'])->name('kurikulum.detail.add');
             Route::delete('/kurikulum/{kurikulum}/detail/{detail}', [KurikulumController::class, 'removeDetail'])->name('kurikulum.detail.remove');
+        });
+
+        // M. Mata Kuliah & Kurikulum -> Kaprodi (View Only)
+        Route::middleware(['role:admin,admin_pt,kaprodi,admin_prodi'])->group(function () {
+            Route::resource('mata-kuliah', MataKuliahController::class)->only(['index', 'show']);
+            Route::resource('kurikulum', KurikulumController::class)->only(['index', 'show']);
         });
 
         // D. Jadwal Kuliah -> Admin PT (CRUD), Admin Prodi (CRUD)

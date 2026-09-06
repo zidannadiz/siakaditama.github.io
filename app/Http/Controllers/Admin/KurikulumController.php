@@ -25,6 +25,8 @@ class KurikulumController extends Controller
 
     public function create()
     {
+        abort_if(auth()->user()->role === 'kaprodi', 403, 'Anda tidak memiliki wewenang untuk menambah data ini.');
+
         $prodis = auth()->user()->isAdminProdi()
             ? Prodi::where('id', auth()->user()->prodi_id)->get()
             : Prodi::orderBy('nama_prodi')->get();
@@ -34,6 +36,8 @@ class KurikulumController extends Controller
 
     public function store(Request $request)
     {
+        abort_if(auth()->user()->role === 'kaprodi', 403, 'Anda tidak memiliki wewenang untuk menyimpan data ini.');
+
         $validated = $request->validate([
             'prodi_id'   => 'required|exists:prodis,id',
             'nama'       => 'required|string|max:100',
