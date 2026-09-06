@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @php
         $appInfo = \App\Services\SystemSettingsService::getAppInfo();
-        $appName = $appInfo['name'] ?? 'SIAKAD';
+        $appName = $appInfo['name'] ?: env('APP_NAME', 'SIA ITAMA');
         $faviconUrl = \App\Services\SystemSettingsService::getFaviconUrl();
     @endphp
     <title>@yield('title', $appName) - Sistem Informasi Akademik</title>
@@ -33,7 +33,7 @@
                         <a href="{{ route('dashboard') }}" class="flex items-center space-x-3">
                             @php
                                 $appInfoBody = \App\Services\SystemSettingsService::getAppInfo();
-                                $appNameBody = $appInfoBody['name'] ?? 'SIAKAD';
+                                $appNameBody = $appInfoBody['name'] ?: env('APP_NAME', 'SIA ITAMA');
                                 $logoUrl = \App\Services\SystemSettingsService::getLogoUrl();
                             @endphp
                             
