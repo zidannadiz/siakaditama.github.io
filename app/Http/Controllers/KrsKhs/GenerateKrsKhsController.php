@@ -28,14 +28,56 @@ class GenerateKrsKhsController extends Controller
             'semester_id' => 'nullable|exists:semesters,id',
         ]);
 
+        $action = $request->input('action', 'download');
+        $jenis = $request->input('jenis', 'krs');
+
         try {
+            if ($action === 'cetak') {
+                $mahasiswa = Mahasiswa::with('prodi')->findOrFail($request->mahasiswa_id);
+                $semesterId = $request->semester_id;
+                
+                // Optional: Get Semester
+                $semester = $semesterId ? \App\Models\Semester::find($semesterId) : \App\Models\Semester::where('status', 'aktif')->first();
+
+                if ($jenis === 'khs') {
+                    // Logic untuk KHS
+                    $query = \App\Models\Nilai::where('mahasiswa_id', $mahasiswa->id)
+                        ->with(['jadwalKuliah.mataKuliah', 'dosen', 'krs.semester']);
+                    if ($semesterId) {
+                        $query->whereHas('krs', function($q) use ($semesterId) {
+                            $q->where('semester_id', $semesterId);
+                        });
+                    }
+                    $dataList = $query->get();
+                    $viewName = 'krs-khs.print-khs';
+                } else {
+                    // Logic untuk KRS
+                    $query = \App\Models\KRS::where('mahasiswa_id', $mahasiswa->id)
+                        ->where('status', 'disetujui');
+                    if ($semesterId) {
+                        $query->where('semester_id', $semesterId);
+                    } else {
+                        $semesterAktif = \App\Models\Semester::where('status', 'aktif')->first();
+                        if ($semesterAktif) $query->where('semester_id', $semesterAktif->id);
+                    }
+                    $dataList = $query->with(['jadwalKuliah.mataKuliah', 'jadwalKuliah.dosen', 'semester'])->get();
+                    $viewName = 'krs-khs.print-krs';
+                }
+                
+                return view($viewName, compact('mahasiswa', 'dataList', 'semester'));
+            }
+
+            // Jika action == 'download', gunakan WordTemplateService
             $result = $this->wordTemplateService->generateDocument(
                 $request->template_id,
                 $request->mahasiswa_id,
                 $request->semester_id
             );
 
-            return response()->download($result['path'], $result['filename']);
+            $mahasiswa = Mahasiswa::findOrFail($request->mahasiswa_id);
+            $customFilename = strtoupper($jenis) . '_' . $mahasiswa->nim . '.docx';
+
+            return response()->download($result['path'], $customFilename)->deleteFileAfterSend(true);
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal generate dokumen: ' . $e->getMessage());
         }
