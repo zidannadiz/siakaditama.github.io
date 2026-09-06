@@ -24,8 +24,8 @@ class GenerateKrsKhsController extends Controller
     {
         $request->validate([
             'template_id' => 'required|exists:template_krs_khs,id',
-            'mahasiswa_id' => 'required|exists:mahasiswa,id',
-            'semester_id' => 'nullable|exists:semester,id',
+            'mahasiswa_id' => 'required|exists:mahasiswas,id',
+            'semester_id' => 'nullable|exists:semesters,id',
         ]);
 
         try {
