@@ -145,15 +145,21 @@ class KRSController extends Controller
         // Notifikasi ke admin (satu kali)
         if ($berhasil > 0) {
             try {
-                $adminUsers = \App\Models\User::whereIn('role', ['admin', 'admin_pt'])->get();
-                if ($adminUsers->count() > 0) {
-                    \App\Helpers\NotifikasiService::createForRole(
-                        'admin_pt',
-                        'Pengajuan KRS Baru',
-                        "Mahasiswa {$mahasiswa->nama} ({$mahasiswa->nim}) mengajukan {$berhasil} mata kuliah baru.",
-                        'info',
-                        route('admin.krs.index')
-                    );
+                $adminUsers = \App\Models\User::whereIn('role', ['admin', 'admin_pt', 'admin_prodi'])->get();
+                foreach ($adminUsers as $admin) {
+                    // Jika admin_prodi, pastikan prodi-nya sama
+                    if ($admin->role === 'admin_prodi' && $admin->prodi_id !== $mahasiswa->prodi_id) {
+                        continue;
+                    }
+                    
+                    \App\Models\Notifikasi::create([
+                        'user_id' => $admin->id,
+                        'judul'   => 'Pengajuan KRS Baru',
+                        'pesan'   => "Mahasiswa {$mahasiswa->nama} ({$mahasiswa->nim}) mengajukan {$berhasil} mata kuliah baru.",
+                        'tipe'    => 'info',
+                        'link'    => route('admin.krs.index'),
+                        'is_read' => false,
+                    ]);
                 }
             } catch (\Exception $e) {
                 \Log::error('Error creating notification for KRS: ' . $e->getMessage());
