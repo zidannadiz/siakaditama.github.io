@@ -191,8 +191,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/{templateKrsKh}/download', [TemplateKrsKhsController::class, 'download'])->name('download');
         });
         
-        // Generate KRS/KHS (Admin PT & Admin Prodi per matrix D. KHS)
-        Route::middleware(['role:admin_pt,admin_prodi'])->prefix('generate-krs-khs')->name('generate-krs-khs.')->group(function () {
+        // Generate KRS/KHS (Hanya Admin Prodi)
+        Route::middleware(['role:admin_prodi'])->prefix('generate-krs-khs')->name('generate-krs-khs.')->group(function () {
             Route::get('/', [GenerateKrsKhsController::class, 'showForm'])->name('index');
             Route::post('/generate', [GenerateKrsKhsController::class, 'generate'])->name('generate');
         });

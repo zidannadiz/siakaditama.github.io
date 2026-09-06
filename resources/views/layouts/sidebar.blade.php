@@ -265,8 +265,8 @@
             </a>
             @endif
 
-            {{-- D. KHS (Cetak KHS): Admin PT, Admin Prodi --}}
-            @if(in_array($role, ['admin_pt', 'admin_prodi']))
+            {{-- D. KHS (Cetak KHS): Hanya Admin Prodi --}}
+            @if($role === 'admin_prodi')
             <a href="{{ route('admin.generate-krs-khs.index') }}?jenis=khs" class="flex items-center justify-between px-4 py-3 rounded-lg transition-colors {{ str_starts_with($currentRoute, 'admin.generate-krs-khs') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
                 <div class="flex items-center space-x-3">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
