@@ -54,10 +54,16 @@ class GenerateKrsKhsController extends Controller
             ->get();
 
         // Get mahasiswa list (for admin) or current user (for mahasiswa)
-        if (auth()->user()->role === 'admin') {
-            $mahasiswa = Mahasiswa::with('prodi')->orderBy('nim')->get();
+        if (auth()->user()->role !== 'mahasiswa') {
+            $query = Mahasiswa::with('prodi')->orderBy('nim');
+            // Jika admin_prodi, batasi hanya mahasiswa di prodinya
+            if (auth()->user()->role === 'admin_prodi') {
+                $query->where('prodi_id', auth()->user()->prodi_id);
+            }
+            $mahasiswa = $query->get();
         } else {
-            $mahasiswa = [auth()->user()->mahasiswa];
+            $mhs = auth()->user()->mahasiswa;
+            $mahasiswa = $mhs ? [$mhs] : [];
         }
 
         return view('krs-khs.generate', compact('templates', 'mahasiswa', 'jenis'));

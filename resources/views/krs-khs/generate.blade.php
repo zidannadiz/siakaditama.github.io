@@ -51,17 +51,31 @@
                 <label for="mahasiswa_id" class="block text-sm font-medium text-gray-700 mb-2">Mahasiswa *</label>
                 
                 @if(auth()->user()->role !== 'mahasiswa')
-                    <select id="mahasiswa_id" name="mahasiswa_id" required
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        <option value="">-- Pilih Mahasiswa --</option>
-                        @foreach($mahasiswa as $mhs)
-                            <option value="{{ $mhs->id }}">{{ $mhs->nim }} - {{ $mhs->nama }} ({{ $mhs->prodi->nama_prodi ?? '-' }})</option>
-                        @endforeach
-                    </select>
+                    @if(count($mahasiswa) > 0)
+                        <select id="mahasiswa_id" name="mahasiswa_id" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">-- Pilih Mahasiswa --</option>
+                            @foreach($mahasiswa as $mhs)
+                                @if($mhs)
+                                    <option value="{{ $mhs->id }}">{{ $mhs->nim }} - {{ $mhs->nama }} ({{ $mhs->prodi->nama_prodi ?? '-' }})</option>
+                                @endif
+                            @endforeach
+                        </select>
+                    @else
+                        <div class="p-3 bg-red-50 text-red-800 rounded-lg text-sm border border-red-200">
+                            Belum ada data mahasiswa yang tersedia untuk Anda.
+                        </div>
+                    @endif
                 @else
-                    <input type="hidden" name="mahasiswa_id" value="{{ $mahasiswa[0]->id }}">
-                    <input type="text" disabled value="{{ $mahasiswa[0]->nim }} - {{ $mahasiswa[0]->nama }}"
-                           class="w-full px-4 py-2 border border-gray-300 bg-gray-100 rounded-lg text-gray-600 cursor-not-allowed">
+                    @if(!empty($mahasiswa) && isset($mahasiswa[0]) && $mahasiswa[0])
+                        <input type="hidden" name="mahasiswa_id" value="{{ $mahasiswa[0]->id }}">
+                        <input type="text" disabled value="{{ $mahasiswa[0]->nim }} - {{ $mahasiswa[0]->nama }}"
+                               class="w-full px-4 py-2 border border-gray-300 bg-gray-100 rounded-lg text-gray-600 cursor-not-allowed">
+                    @else
+                        <div class="p-3 bg-red-50 text-red-800 rounded-lg text-sm border border-red-200">
+                            Data profil mahasiswa Anda tidak ditemukan. Hubungi administrator.
+                        </div>
+                    @endif
                 @endif
                 @error('mahasiswa_id') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
             </div>
